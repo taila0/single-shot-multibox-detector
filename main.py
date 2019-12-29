@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # Generate Dataset
     dataset = DetectionDataset(data_type='train')
-    train_imgs, train_labs_info = dataset[:100]
+    train_imgs, train_labs_info = dataset[:3000]
     train_labs_bucket = train_labs_info.groupby('image_index')
 
     # Generate Detection Network
