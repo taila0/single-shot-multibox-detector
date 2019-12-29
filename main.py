@@ -43,5 +43,5 @@ if __name__ == '__main__':
     results = model.fit(train_imgs / 255.,
                         train_labs,
                         validation_split=0.1,
-                        batch_size=5,
+                        batch_size=16,
                         epochs=20)
