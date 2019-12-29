@@ -105,51 +105,8 @@ class DetectionGenerator(Sequence):
         images, ground_truths = self.dataset[self.batch_size * index:
                                              self.batch_size * (index + 1)]
         pr_boxes = self.prior.generate(images.shape[1:])
-
-        y_true = []
-        for index, gt_df in ground_truths.groupby('image_index'):
-
-            gt_boxes = gt_df[['cx', 'cy', 'w', 'h']].values
-            gt_labels = gt_df['label'].values
-            iou = calculate_iou(gt_boxes, pr_boxes)
-
-            match_indices = np.argwhere(iou >= 0.5)
-            if self.best_match_policy:
-                best_indices = np.stack([np.arange(iou.shape[0]),
-                                         np.argmax(iou, axis=1)], axis=1)
-                match_indices = np.concatenate([match_indices, best_indices])
-            gt_match_indices = match_indices[:, 0]
-            pr_match_indices = match_indices[:, 1]
-
-            # Background로 일단 채움
-            y_true_clf = np.ones((pr_boxes.shape[0])) * self.num_classes
-            y_true_clf[pr_match_indices] = gt_labels[gt_match_indices]
-
-            # classification One-Hot Encoding
-            y_true_clf = to_categorical(y_true_clf,
-                                        num_classes=self.num_classes + 1)
-            if self.best_match_policy:
-                ignore_indices = np.argwhere((iou < 0.5) & (iou >= 0.4))[:, 1]
-                y_true_clf[ignore_indices, -1] = -1
-
-            # Positional Information Encoding
-            y_true_loc = np.zeros((pr_boxes.shape[0], 4))
-            g_cx, g_cy, g_w, g_h = gt_boxes[gt_match_indices].transpose()
-            p_cx, p_cy, p_w, p_h = pr_boxes[pr_match_indices].transpose()
-
-            hat_g_cx = (g_cx - p_cx) / p_w
-            hat_g_cy = (g_cy - p_cy) / p_h
-            hat_g_w = np.log(g_w / p_w)
-            hat_g_h = np.log(g_h / p_h)
-
-            hat_g = np.stack([hat_g_cx, hat_g_cy, hat_g_w, hat_g_h], axis=1)
-            y_true_loc[pr_match_indices] = hat_g
-
-            y_true_head = np.concatenate([y_true_clf, y_true_loc], axis=1)
-
-            y_true.append(y_true_head)
-
-        return images, np.stack(y_true)
+        y_trues = label_generator(ground_truths.groupby('image_index'), pr_boxes, self.num_classes + 1)
+        return images, y_trues
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
