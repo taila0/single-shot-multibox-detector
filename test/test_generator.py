@@ -67,21 +67,3 @@ class TestGenerator(TestCase):
         delta_coords = np.zeros([self.prior_boxes.shape[0], 4])
         delta_coords[pr_match_indices] = delta_loc
         merged_y = np.concatenate([prior_onehot_labels, delta_coords], axis=-1)
-
-        # Sangjae
-        gen = DetectionGenerator(self.dataset, self.prior, 1, shuffle=False)
-        train_imgs, train_labs = gen[0]
-
-        # 우선적으로 이미지가 같은 이미지인지 확인
-        np.testing.assert_almost_equal(train_imgs, self.imgs[0:1])
-
-        # 라벨인 같은지 확인
-        np.testing.assert_almost_equal(
-            matching_labels_coords(self.prior_boxes, self.iou, 11, self.gt_boxes, self.gt_labels),
-            merged_y
-        )
-
-    def test_label_generator(self):
-
-        labels = label_generator(self.labs_info.groupby('image_index'), self.prior_boxes, 11)
-        print(labels.shape)
