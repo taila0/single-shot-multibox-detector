@@ -1,10 +1,7 @@
-import numpy as np
-from tensorflow.python.keras.utils import to_categorical
 from iou import calculate_iou
 import numpy as np
-import pandas as pd
-from tensorflow.python.keras.utils import Sequence
-from tensorflow.python.keras.utils import to_categorical
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras.utils import to_categorical
 
 
 def label_generator(train_labels_bucket, prior_boxes, n_classes):
