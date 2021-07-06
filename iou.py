@@ -4,8 +4,10 @@ from utils import ccwh2xyxy
 
 def calculate_iou(pr_boxes, gt_boxes):
     """
-    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ]
-    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ]
+    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ],
+                    shape: (N_pr_boxes, 4=(cx cy w, h))
+    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ],
+                    shape: (N_gt_boxes, 4=(cx cy w, h)),
     """
 
     # cxcywh -> xyxy
