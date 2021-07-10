@@ -27,20 +27,20 @@ def label_generator(default_bboxes, gt_bboxes):
 
     # iou 중 가장 overlay 비율이 큰 class을 선택합니다.
     # shape = (N_default_boxes, )
-    max_overlay_cls = np.argmax(ious, axis=-1)
+    true_cls = np.argmax(ious, axis=-1)
 
     # 모든 obj 에 대해 iou 가 0.5 이하이면 background class, -1로 지정합니다.
     background_mask = np.all(ious < 0.5, axis=-1)
-    max_overlay_cls[background_mask] = -1
+    true_cls[background_mask] = -1
 
     # 기존의 정답 데이터에 [0, 0, 0, 0] 을 추가합니다.
     gt_with_bg = np.concatenate([gt_coords, np.array([[0, 0, 0, 0]])], axis=0)
 
     # 각 default boxes에 해당하는 ground truth 의 좌표값을 가져옵니다.
-    true_reg = gt_with_bg[max_overlay_cls]
+    true_reg = gt_with_bg[true_cls]
 
     # iou 가 0.5 이상 되는 값들의 index 을 가져옵니다.
-    model_true_bboxes = gt_with_bg[max_overlay_cls]
+    model_true_bboxes = gt_with_bg[true_cls]
     pos_mask = np.all(true_reg, axis=-1)
 
     # delta 값을 계산합니다.
@@ -99,4 +99,4 @@ if __name__ == '__main__':
     np.array(true_regs)
     consume_time = time() - s_time
     print('consume_time : {}'.format(consume_time))
-    print('transaction units : {}'.format(11000/consume_time))
+    print('transaction units : {}'.format(11000 / consume_time))
