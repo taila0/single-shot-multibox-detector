@@ -63,7 +63,7 @@ def matching_labels_coords(prior_boxes, iou, n_classes, gt_boxes, gt_labels, thr
 
 
 from prior import PriorBoxes
-from dataset import DetectionDataset
+from src.dataset import DetectionDataset
 
 
 class DetectionGenerator(Sequence):

@@ -2,7 +2,7 @@ from unittest import TestCase
 from model import simple_detection_netowrk
 import tensorflow.python.keras.backend as K
 import tensorflow as tf
-from dataset import DetectionDataset
+from src.dataset import DetectionDataset
 
 
 class TestModel(TestCase):

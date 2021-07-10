@@ -3,6 +3,7 @@ import cv2
 import os
 import pandas as pd
 import wget
+from utils import draw_rectangles, xywh2xyxy
 
 DOWNLOAD_URL_FORMAT = "https://s3.ap-northeast-2.amazonaws.com/pai-datasets/all-about-mnist/{}/{}.csv"
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -68,7 +69,7 @@ class DetectionDataset:
             width = (digit_positions[:, 1] - digit_positions[:, 0])
             height = (digit_positions[:, 3] - digit_positions[:, 2])
             digit_positions = np.stack([center_x, center_y, width, height], axis=-1)
-            digit_info = np.concatenate([np.ones_like(digit_labels[:,None])*index,
+            digit_info = np.concatenate([np.ones_like(digit_labels[:, None]) * index,
                                          digit_positions,
                                          digit_labels[:, None]],
                                         axis=1)
@@ -96,9 +97,9 @@ class DetectionDataset:
                 center_y = (digit_positions[:, 2] + digit_positions[:, 3]) / 2
                 width = (digit_positions[:, 1] - digit_positions[:, 0])
                 height = (digit_positions[:, 3] - digit_positions[:, 2])
-                digit_positions = np.stack([center_x, center_y, width, height],axis=-1)
+                digit_positions = np.stack([center_x, center_y, width, height], axis=-1)
 
-                digit_info = np.concatenate([np.ones_like(digit_labels[:,None])*_index,
+                digit_info = np.concatenate([np.ones_like(digit_labels[:, None]) * _index,
                                              digit_positions,
                                              digit_labels[:, None]],
                                             axis=1)
@@ -120,7 +121,7 @@ class DetectionDataset:
 
     def _scatter_random(self, images):
         background = np.random.normal(*self.bg_noise,
-                                      size=(*self.bg_size,3))
+                                      size=(*self.bg_size, 3))
         positions = []
 
         for image in images:
@@ -154,7 +155,7 @@ class DetectionDataset:
                 # 이전의 object랑 겹치지 않으면 넘어감
                 break
             counter -= 1
-        image = image[...,None] * np.random.uniform(*self.color_noise, size=(1,1,3))
+        image = image[..., None] * np.random.uniform(*self.color_noise, size=(1, 1, 3))
         background[y:y + height_fg, x:x + width_fg] += image
 
         background = np.clip(background, 0., 1.)
@@ -233,3 +234,17 @@ def load_dataset(dataset, data_type):
     images = images / 255  # normalization, 0~1
     labels = df.label  # label information
     return images, labels
+
+
+if __name__ == '__main__':
+    mnist_dataset = DetectionDataset()
+    # label : image no, cx, cy, w, h, class
+    image, labels = mnist_dataset[0]
+
+    xywh = np.array(labels)[:, 1:5]
+    xyxy = xywh2xyxy(xywh)
+
+    rected_images = draw_rectangles((image*255).astype('uint'), xyxy)
+    import matplotlib.pyplot as plt
+    plt.imshow(rected_images)
+    plt.show()

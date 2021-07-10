@@ -1,10 +1,9 @@
 import numpy as np
 from unittest import TestCase
-from dataset import DetectionDataset
+from src.dataset import DetectionDataset
 from prior import PriorBoxes
 from iou import calculate_iou
 from tensorflow.python.keras.utils import to_categorical
-from generator import matching_labels_coords, DetectionGenerator, label_generator
 
 
 class TestGenerator(TestCase):

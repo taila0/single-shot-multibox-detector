@@ -1,6 +1,6 @@
 from unittest import TestCase
 from iou import calculate_iou
-from dataset import DetectionDataset
+from src.dataset import DetectionDataset
 from utils import plot_images
 from default_boxes import *
 from utils import xywh2xyxy, draw_rectangles, images_with_rectangles

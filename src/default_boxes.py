@@ -6,9 +6,6 @@ def tiling_default_boxes(center_xy, sizes):
     """
     Description:
     original image 와 좌표 위치가 매칭된 feature map의 모든 cell에 모든 default box가 적용된 좌표값을 반환합니다.
-
-
-    Usage:
     :param center_xy: shape=(N, 2), feature map의 각 cell과 original image에 매칭되는 좌표
     :param sizes: tuple, shape=(n_scales, n_ratios, 2), ratio에 scale 이 곱해진 결과값을 반환
         example)
@@ -145,4 +142,3 @@ if __name__ == '__main__':
 
     # Get default boxes over feature map
     default_boxes = tiling_default_boxes(center_xy, sizes)
-

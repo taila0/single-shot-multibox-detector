@@ -3,7 +3,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
 from prior import PriorBoxes
-from dataset import DetectionDataset
+from src.dataset import DetectionDataset
 from generator import DetectionGenerator
 from loss import SSDLoss
 
