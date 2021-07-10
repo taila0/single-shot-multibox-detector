@@ -32,6 +32,7 @@ def tiling_default_boxes(center_xy, sizes):
 def generate_default_boxes(scales, ratios):
     """
     Description:
+    지정된 크기(scales)와 비율(ratio)에 대한 복수개의 bounding box 을 생성합니다.
 
     :param scales: tuple or list, (int, int, ... int ), shape=(n_shape, )
         example) (3, 6, 9)
