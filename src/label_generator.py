@@ -3,6 +3,8 @@ from delta import calculate_delta
 from default_boxes import *
 from utils import xywh2xyxy, xyxy2xywh
 from iou import calculate_iou
+from tqdm import tqdm
+from time import time
 
 
 def label_generator(default_bboxes, gt_bboxes):
@@ -51,13 +53,7 @@ def label_generator(default_bboxes, gt_bboxes):
 
 
 if __name__ == '__main__':
-    # Get sample image and object coordinates
-    trainset = DetectionDataset(data_type='train')
-    gt_img, gt_info = trainset[0]
-    gt_coords = gt_info.iloc[:, 1:5].values
-    gt_coords = xywh2xyxy(gt_coords)
-    gt_labels = gt_info.iloc[:, -1].values
-
+    # Generate default bboxes
     fmap = tf.constant(shape=(2, 8, 8, 2), value=1)
     h, w = fmap.get_shape()[1:3]
     n_layer = 11
@@ -83,10 +79,24 @@ if __name__ == '__main__':
     # default boxes
     default_boxes = default_boxes.reshape(-1, 4)
 
-    # ground truth coordinates(x1, y1, x2, y2), shape = (N_obj, 4)
-    gt_coords = gt_coords.reshape(-1, 4)
-    gt_coords = xyxy2xywh(gt_coords)
+    # Get sample image and object coordinates
+    trainset = DetectionDataset(data_type='train')
 
-    # 이미지 한장에 대한 detection 라벨을 생성합니다.
-    true_reg = label_generator(default_boxes, gt_coords)
+    true_regs = []
+    s_time = time()
+    for gt_img, gt_info in tqdm(trainset):
+        gt_coords = gt_info.iloc[:, 1:5].values
+        gt_coords = xywh2xyxy(gt_coords)
+        gt_labels = gt_info.iloc[:, -1].values
 
+        # ground truth coordinates(x1, y1, x2, y2), shape = (N_obj, 4)
+        gt_coords = gt_coords.reshape(-1, 4)
+        gt_coords = xyxy2xywh(gt_coords)
+
+        # 이미지 한장에 대한 detection 라벨을 생성합니다.
+        true_reg = label_generator(default_boxes, gt_coords)
+        true_regs.append(true_reg)
+    np.array(true_regs)
+    consume_time = time() - s_time
+    print('consume_time : {}'.format(consume_time))
+    print('transaction units : {}'.format(11000/consume_time))
