@@ -1,19 +1,14 @@
 import numpy as np
-from utils import ccwh2xyxy
+from utils import xywh2xyxy
 
 
 def calculate_iou(pr_boxes, gt_boxes):
     """
-    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ],
-                    shape: (N_pr_boxes, 4=(cx cy w, h))
-    sample_bboxes : Ndarray, 2D array [x1, x2, y1, y2, x1, x2, y1, y2, ... ],
-                    shape: (N_gt_boxes, 4=(cx cy w, h)),
+    sample_bboxes : Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx cy w, h))
+    sample_bboxes : Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx cy w, h)),
     """
-
-    # cxcywh -> xyxy
-    pr_boxes = ccwh2xyxy(pr_boxes)
-    # cxcywh -> xyxy
-    gt_boxes = ccwh2xyxy(gt_boxes)
+    pr_boxes = xywh2xyxy(pr_boxes)
+    gt_boxes = xywh2xyxy(gt_boxes)
 
     # Get Area
     area_pr = (pr_boxes[:, 2] - pr_boxes[:, 0]) * (pr_boxes[:, 3] - pr_boxes[:, 1])
@@ -38,7 +33,5 @@ def calculate_iou(pr_boxes, gt_boxes):
 
     # expand dimension for broadcasting
     expand_area_pr = np.expand_dims(area_pr, axis=-1)
-
     iou = overlay_area / (expand_area_pr + area_gt - overlay_area)
     return iou
-
