@@ -1,11 +1,12 @@
-from datetime import time
 from label_generator import label_generator
 from model import simple_detection_netowrk
 from dataset import DetectionDataset
 from default_boxes import generate_tiling_default_boxes
-from utils import xywh2xyxy, draw_rectangles, images_with_rectangles, xyxy2xywh
+from utils import xywh2xyxy
 from tqdm import tqdm
 from time import time
+import numpy as np
+import tensorflow as tf
 
 # Load dataset
 trainset = DetectionDataset(data_type='train')
@@ -13,6 +14,7 @@ gt_img, gt_info = trainset[0]
 gt_coords = gt_info.iloc[:, 1:5].values
 gt_coords = xywh2xyxy(gt_coords)
 gt_labels = gt_info.iloc[:, -1].values
+n_classes = 10 + 1
 
 # Generate detection SSD model
 n_boxes = 5
@@ -22,6 +24,18 @@ inputs, (cls3_5, loc3_7), (cls4_5, loc4_7), (cls5_5, loc5_7) = simple_detection_
 multi_head_cls = [cls3_5, cls4_5, cls5_5]
 multi_head_loc = [loc3_7, loc4_7, loc5_7]
 n_head = len(multi_head_loc)
+
+# classification, localization head 을 합침
+# cls: (N, h, w, n_classes * 5) -> (N, h * w, n_classes*5),
+# loc: (N, h, w, 4*5) -> (N, h * w, 4*5)
+pred_merged_cls = tf.concat(
+    [tf.reshape(head_cls, (-1, np.prod(head_cls.get_shape()[1:3]), n_boxes, n_classes)) for head_cls in multi_head_cls],
+    axis=1)
+pred_merged_loc = tf.concat(
+    [tf.reshape(head_loc, (-1, np.prod(head_loc.get_shape()[1:3]), n_boxes, 4)) for head_loc in multi_head_loc],
+    axis=1)
+pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
+pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
 
 # 각 header 는 하나의 scale 을 사용함, ratio 는 공유
 scales = [10, 25, 40]
@@ -66,8 +80,8 @@ for head_ind in tqdm(range(n_head)):
     default_boxes_bucket.append(default_boxes)
 
 # 모든 이미지 당 header 별 delta, cls 정답값을 수집합니다.
-header_loc_bucket = []
-header_cls_bucket = []
+trues = []
+true_imgs = []
 s_time = time()
 for gt_img, gt_info in tqdm(trainset):
 
@@ -86,9 +100,22 @@ for gt_img, gt_info in tqdm(trainset):
         each_header_loc.append(true_delta)
         each_header_cls.append(true_cls)
 
+    # (N_a, *n_anchor), (N_b, 11*n_anchor), (N_c, 11*n_anchor) -> (N_a + N_b + N_c, 11*n_anchor)
+    true_head_loc = np.concatenate(each_header_loc, axis=0)
+
+    # (N_a, 4*n_anchor), (N_b, 4*n_anchor), (N_c, 4*n_anchor) -> (N_a + N_b + N_c, 4*n_anchor)
+    true_head_cls = np.concatenate(each_header_cls, axis=0)
+
+    # (N_a + N_b + N_c, 4*n_anchor), (N_a + N_b + N_c) -> (N_a + N_b + N_c, 11*n_anchor + 4*n_anchor)
+    true = np.concatenate([true_head_loc, true_head_cls[:, None]], axis=-1)
+
     # 각 header 별 delta, cls 을 각 global bucket 에 추가합니다.
-    header_loc_bucket.append(each_header_loc)
-    header_cls_bucket.append(each_header_cls)
+    trues.append(true)
+    true_imgs.append(gt_img)
+np.save('../datasets/true_labels.npy', np.array(trues))
+np.save('../datasets/true_images.npy', np.array(true_imgs))
+
 consume_time = time() - s_time
 print('consume_time : {}'.format(consume_time))
 print('transaction units : {}'.format(11000 / consume_time))
+print('Finish generate detection dataset!')
