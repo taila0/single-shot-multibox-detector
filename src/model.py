@@ -1,17 +1,23 @@
 from tensorflow.python.keras.layers import Input, Conv2D
 from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import Concatenate, Reshape
 from tensorflow.python.keras.layers import Softmax
 
 
 def simple_detection_netowrk(input_shape, n_anchors, n_classes):
     """
     Description:
-    Detection 을 위한 simple single shot multi detector 구현
+        Detection 을 위한 simple single shot multi detector 구현
 
     Args:
-    n_anchors:  feature map cell 당 할당되는 anchor 의 개수
+        :param input_shape: tuple or list, shape=(3=(h, w, ch))
+        :param n_anchors: int
+        :param n_classes: int
 
+    :return:
+        inputs: keras tensor
+        (soft3_5, locz3_6): (keras tensor, keras tensor),
+        (soft4_5, locz4_6): (keras tensor, keras tensor),
+        (soft5_5, locz5_6): (keras tensor, keras tensor),
     """
     inputs = Input(shape=input_shape)
 
