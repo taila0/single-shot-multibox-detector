@@ -1,0 +1,37 @@
+from datetime import time
+from label_generator import label_generator
+from model import simple_detection_netowrk
+from dataset import DetectionDataset
+from default_boxes import generate_tiling_default_boxes
+from utils import xywh2xyxy, draw_rectangles, images_with_rectangles, xyxy2xywh
+from tqdm import tqdm
+from time import time
+import numpy as np
+import tensorflow as tf
+
+# load dataset
+train_xs = np.load('../datasets/true_images.npy')
+train_ys = np.load('../datasets/true_labels.npy')
+input_shape = train_xs.shape[1:]
+n_classes = 11
+print(train_xs.shape, train_ys.shape)
+
+# Generate detection SSD model
+n_boxes = 5
+inputs, (cls3_5, loc3_7), (cls4_5, loc4_7), (cls5_5, loc5_7) = simple_detection_netowrk(input_shape, n_boxes, n_classes)
+multi_head_cls = [cls3_5, cls4_5, cls5_5]
+multi_head_loc = [loc3_7, loc4_7, loc5_7]
+n_head = len(multi_head_loc)
+
+# classification, localization head 을 합침
+# cls: (N, h, w, n_classes * 5) -> (N, h * w, n_classes*5),
+# loc: (N, h, w, 4*5) -> (N, h * w, 4*5)
+pred_merged_cls = tf.concat(
+    [tf.reshape(head_cls, (-1, np.prod(head_cls.get_shape()[1:3]), n_boxes, n_classes)) for head_cls in multi_head_cls],
+    axis=1)
+pred_merged_loc = tf.concat(
+    [tf.reshape(head_loc, (-1, np.prod(head_loc.get_shape()[1:3]), n_boxes, 4)) for head_loc in multi_head_loc],
+    axis=1)
+pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
+pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
+print('Model generated \nModel output shape : {}'.format(pred.get_shape()))
