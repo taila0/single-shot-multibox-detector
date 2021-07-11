@@ -5,47 +5,55 @@ import numpy as np
 def tiling_default_boxes(center_xy, sizes):
     """
     Description:
-    original image 와 좌표 위치가 매칭된 feature map의 모든 cell에 모든 default box가 적용된 좌표값을 반환합니다.
-    :param center_xy: shape=(N, 2), feature map의 각 cell과 original image에 매칭되는 좌표
-    :param sizes: tuple, shape=(n_scales, n_ratios, 2), ratio에 scale 이 곱해진 결과값을 반환
-        example)
-            scales = (10, 100)
-            ratios = ((1, 1) (0.5 ,1))
-            return = [[[10. 10.], [5.  10.]],
-                      [[100. 100.], [50.  100.]]]
-    :return:
+        original image 와 좌표 위치가 매칭된 feature map의 모든 cell에 적용된 default boxes의 좌표값을 반환합니다.
+
+    Args:
+        :param center_xy: shape=(N_center, 2), feature map의 각 cell과 original image에 매칭되는 좌표
+        :param sizes: tuple, shape=(n_scales, n_ratios, 2), ratio에 scale 이 곱해진 결과값을 반환
+            example)
+                scales = (10, 100)
+                ratios = ((1, 1) (0.5 ,1))
+                return = [[[10. 10.], [5.  10.]],
+                          [[100. 100.], [50.  100.]]]
+    Returns:
+        :return: ndarray, (N_center, N_size(=n_scales * n_ratios), 4=(cx cy w h)) 을 반환
     """
+
     # ((w, h), (w, h) ... (w, h)) 로 구성되어 있음
     sizes = sizes.reshape(-1, 2)
 
-    # broadcasting 을 위해 center_xy 을 중첩,
-    # shape: (# center_xy, 2) -> (# sizes, # center xy, 2)
+    # center_xy 을 sizes 의 개 수 만큼 중첩해 아래와 같은 shape 로 변경
+    # shape: (N_sizes , N_center xy, 2)
     stacked_xy = np.stack([center_xy] * len(sizes), axis=1)
 
-    # broadcasting 을 위해 shape 을 변경함
-    # shape (# center_xy, 2) -> (# sizes, # center xy, 2)
+    # sizes 을 center_xy 의 개 수 만큼 중첩해 아래와 같은 shape 로 변경
+    # shape (# center_xy, 2)=(N_sizes * N_center xy, 2)
     stacked_wh = np.stack([sizes] * len(center_xy), axis=0)
 
+    # (N_sizes , N_center xy, 4 =(cx cy w h ))를 생성
     return np.concatenate([stacked_xy, stacked_wh], axis=-1)
 
 
 def generate_default_boxes(scales, ratios):
     """
     Description:
-    지정된 크기(scales)와 비율(ratio)에 대한 복수개의 bounding box 을 생성합니다.
+        지정된 크기(scales)와 비율(ratio)에 대한 복수개의 bounding box 을 생성합니다.
 
-    :param scales: tuple or list, (int, int, ... int ), shape=(n_shape, )
-        example) (3, 6, 9)
-        ratio 가 1 일때 default 박스의 size 크기
-    :param ratios: tuple or list, ((H_ratio, W_ratio), (H_ratio, W_ratio) ... (H_ratio, W_ratio)) , shape=(n_ratio, 2)
-        default boxes의 h, w 정보가 순차적으로 들어있는 자료구조.
-        example) ((1, 0.5), (1, 1), ... (0.5, 1))
-    :return: tuple, shape = (n_scales, n_ratios, 2) scale 별 ratio 가 적용된 h, w 을  반환
-        example)
-            scales = (10, 100)
-            ratios = ((1, 1) (0.5 ,1))
-            return = [[[10. 10.], [5.  10.]],
-                      [[100. 100.], [50.  100.]]]
+    Args:
+        :param scales: tuple or list, shape=(n_shape, ), (int, int, ... int )
+            example) (3, 6, 9)
+            ratio 가 1 일때 default 박스의 size 크기
+        :param ratios: tuple or list, ((H_ratio, W_ratio), (H_ratio, W_ratio) ... (H_ratio, W_ratio)) , shape=(n_ratio, 2)
+            default boxes의 h, w 정보가 순차적으로 들어있는 자료구조.
+            example) ((1, 0.5), (1, 1), ... (0.5, 1))
+
+    Returns:
+        :return: tuple, shape = (n_scales, n_ratios, 2) scale 별 ratio 가 적용된 h, w 을  반환
+            example)
+                scales = (10, 100)
+                ratios = ((1, 1) (0.5 ,1))
+                return = [[[10. 10.], [5.  10.]],
+                          [[100. 100.], [50.  100.]]]
 
     """
     # shape (n_ratios, 2) -> (n_ratios, 1, 2)
@@ -63,18 +71,28 @@ def generate_default_boxes(scales, ratios):
 def original_rectangle_coords(fmap_size, kernel_sizes, strides, paddings):
     """
     Description:
-    주어진 Feature map의 center x, center y 좌표를 Original Image center x, center y에 맵핑합니다.
-    아래 코드에서 사용된 공식은 "A guide to convolution arithmetic for deep learning" 에서 가져옴
+        주어진 Feature map의 center x, center y 좌표를 Original Image center x, center y에 맵핑합니다.
+        아래 코드에서 사용된 공식은 "A guide to convolution arithmetic for deep learning" 에서 가져옴
 
-    :param fmap_size: 1d array, 최종 출력된 fmap shape, (H, W) 로 구성
-        example) (4, 4)
-    :param kernel_sizes: tuple or list, 각 Layer 에 적용된 filter 크기,
-        example) [3, 3]
-    :param strides: tuple or list, 각 Layer 에 적용된 stride 크기
-        example) [2, 1]
-    :param paddings: tuple or list, List 의 Element 가 'SAME', 'VALID' 로 구성되어 있어야 함
-        example) ['SAME', 'VALID']
-    :return: feature map의 각 cell과 original image에 매칭되는 좌표를 반환,
+    Args:
+        :param fmap_size: tuple or list or ndarray, shape (2=(height, width)), 최종 출력된 feature map 의 크기
+            example) (4, 4)
+
+        :param kernel_sizes: tuple or list, 각 Layer 에 적용된 filter 크기,
+            example) [3, 3]
+
+        :param strides: tuple or list or ndarray, shape (N_layer), [int, int, ... int],
+            tuple or list, 각 Layer 에 적용된 stride 크기(pooling layer 포함)
+            example) [2, 4, ... 3 ]
+
+        :param paddings: tuple or list, [str, str, ..., str],
+            feature map을 생성하기 까지의 적용된 padding,
+            paddings 의 element 개 수는 layer 의 깊이와 같아야 합니다.(pooling layer 포함)
+            List 의 Element 가 반드시 'SAME' 또는 'VALID' 로 구성되어 있어야 함
+            example) ['SAME', 'SAME', ... 'VALID']
+
+    Returns:
+        :return: feature map의 각 cell과 original image에 매칭되는 좌표를 반환,
         example)
            feature map
             +---+---+
@@ -84,6 +102,7 @@ def original_rectangle_coords(fmap_size, kernel_sizes, strides, paddings):
             +---+---+
                     a               b               c               d
             [[cx, cy, w, h], [cx, cy, w, h] [cx, cy, w, h], [cx, cy, w, h]]
+
     """
 
     rf = 1  # receptive field
@@ -117,6 +136,57 @@ def original_rectangle_coords(fmap_size, kernel_sizes, strides, paddings):
     # coords = ((cx, cy, w, h), (cx, cy, w, h) ... (cx, cy, w, h))
     coords = np.stack([ys, xs, [rf] * n_samples, [rf] * n_samples], axis=-1)
     return coords
+
+
+def generate_tiling_default_boxes(*args, **kwargs):
+    """
+    Description:
+        위 함수는 아래 순서로 작동 합니다.
+        1. 모든 feature map cell 을 original image 의 원 좌표(cx, cy, w, h)로 변환
+        2. default boxes 생성
+        3. default boxes 을 1번에서 변환된 좌표에 적용
+
+        각 파트의 자세한 설명은 아래 주석에 나와 있습니다.
+        1.
+        주어진 Feature map의 center x, center y 좌표를 Original Image center x, center y에 맵핑합니다.
+        (아래 코드에서 사용된 공식은 "A guide to convolution arithmetic for deep learning" 에서 참조함)
+        2.
+        지정된 크기(scales)와 비율(ratio)에 대한 복수개의 bounding box 을 생성합니다.
+        3.
+        original image 와 좌표 위치가 매칭된 feature map의 모든 cell에 적용된 default boxes의 좌표값을 반환합니다.
+
+    Args:
+        :param fmap_size: tuple or list or ndarray, shape (2=(height, width)), 최종 출력된 feature map 의 크기
+            example) (4, 4)
+
+        :param paddings: tuple or list, [str, str, ..., str],
+            feature map을 생성하기 까지의 적용된 padding,
+            paddings 의 element 개 수는 layer 의 깊이와 같아야 합니다.(pooling layer 포함)
+            List 의 Element 가 반드시 'SAME' 또는 'VALID' 로 구성되어 있어야 함
+            example) ['SAME', 'SAME', ... 'VALID']
+
+        :param strides: tuple or list or ndarray, shape (N_layer), [int, int, ... int]
+            tuple or list, 각 Layer 에 적용된 stride 크기(pooling layer 포함)
+            example) [2, 4, ... 3 ]
+
+        :param kernel_sizes: tuple or list or ndarray, shape (N_layer), [int, int, ... int]
+            feature map을 생성하기 까지의 적용된 kernel_size(pooling layer 포함)
+            example) [3, 3, ... 3 ]
+
+        :param scales: tuple or list, shape=(n_shape, ), (int, int, ... int )
+            example) (3, 6, 9)
+            ratio 가 1 일때 default 박스의 size 크기
+        :param ratios: tuple or list, ((H_ratio, W_ratio), (H_ratio, W_ratio) ... (H_ratio, W_ratio)) , shape=(n_ratio, 2)
+            default boxes의 h, w 정보가 순차적으로 들어있는 자료구조.
+            example) ((1, 0.5), (1, 1), ... (0.5, 1))
+        :param center_xy: shape=(N, 2), feature map의 각 cell과 original image에 매칭되는 좌표
+        :param sizes: tuple, shape=(n_scales, n_ratios, 2), ratio에 scale 이 곱해진 결과값을 반환
+
+    Returns:
+
+    """
+    kernel_sizes, strides, paddings = kwargs['kernel_sizes'], kwargs['kernel_sizes'], kwargs['kernel_sizes'],
+    center_xy = original_rectangle_coords((32, 32), kernel_sizes, strides, paddings)[:, :2]
 
 
 if __name__ == '__main__':
