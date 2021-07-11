@@ -5,6 +5,14 @@ from tensorflow.python.keras.layers import Softmax
 
 
 def simple_detection_netowrk(input_shape, n_anchors, n_classes):
+    """
+    Description:
+    Detection 을 위한 simple single shot multi detector 구현
+
+    Args:
+    n_anchors:  feature map cell 당 할당되는 anchor 의 개수
+
+    """
     inputs = Input(shape=input_shape)
 
     num_features = 16
@@ -49,28 +57,18 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
                      name='conv5_2')(norm5_1)
     norm5_2 = BatchNormalization(name='norm5_2')(conv5_2)
 
+    # multi head 3
     clss3_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas3_3')(norm3_2)
-    rshp3_4 = Reshape((-1, n_classes), name='rshp3_4')(clss3_3)
-    soft3_5 = Softmax(name='soft3_5')(rshp3_4)
+    soft3_5 = Softmax(name='soft3_5')(clss3_3)
     locz3_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz3_6')(norm3_2)
-    rshp3_7 = Reshape((-1, 4), name='rshp3_7')(locz3_6)
-    cnct3_8 = Concatenate(axis=-1, name='cnct3_8')([soft3_5, rshp3_7])
 
     # multi head 4
     clss4_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas4_3')(norm4_2)
-    rshp4_4 = Reshape((-1, n_classes), name='rshp4_4')(clss4_3)
-    soft4_5 = Softmax(name='soft4_5')(rshp4_4)
+    soft4_5 = Softmax(name='soft4_5')(clss4_3)
     locz4_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz4_6')(norm4_2)
-    rshp4_7 = Reshape((-1, 4), name='rshp4_7')(locz4_6)
-    cnct4_8 = Concatenate(axis=-1, name='cnct4_8')([soft4_5, rshp4_7])
 
     # multi head 5
     clss5_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas5_3')(norm5_2)
-    rshp5_4 = Reshape((-1, n_classes), name='rshp5_4')(clss5_3)
-    soft5_5 = Softmax(name='soft5_5')(rshp5_4)
+    soft5_5 = Softmax(name='soft5_5')(clss5_3)
     locz5_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz5_6')(norm5_2)
-    rshp5_7 = Reshape((-1, 4), name='rshp5_7')(locz5_6)
-    cnct5_8 = Concatenate(axis=-1, name='cnct5_8')([soft5_5, rshp5_7])
-
-    cnct6_1 = Concatenate(axis=1, name='concat6_1')([cnct3_8, cnct4_8, cnct5_8])
-    return inputs, cnct6_1
+    return inputs, (soft3_5, locz3_6), (soft4_5, locz4_6), (soft5_5, locz5_6)
