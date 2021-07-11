@@ -1,19 +1,19 @@
-from datetime import time
-from label_generator import label_generator
 from model import simple_detection_netowrk
-from dataset import DetectionDataset
-from default_boxes import generate_tiling_default_boxes
-from utils import xywh2xyxy, draw_rectangles, images_with_rectangles, xyxy2xywh
-from tqdm import tqdm
-from time import time
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.utils import to_categorical
+from loss import detection_loss
 
 # load dataset
 train_xs = np.load('../datasets/true_images.npy')
 train_ys = np.load('../datasets/true_labels.npy')
 input_shape = train_xs.shape[1:]
 n_classes = 11
+train_ys_cls = train_ys[..., 4:]
+train_ys_cls = np.where(train_ys_cls == -1, 10, train_ys_cls)
+train_ys_cls = to_categorical(train_ys_cls, num_classes=11)
+train_ys = np.concatenate([train_ys[..., :4], train_ys_cls], axis=-1)
 print(train_xs.shape, train_ys.shape)
 
 # Generate detection SSD model
@@ -35,3 +35,8 @@ pred_merged_loc = tf.concat(
 pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
 pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
 print('Model generated \nModel output shape : {}'.format(pred.get_shape()))
+
+model = Model(inputs, pred)
+model.compile('adam', loss=detection_loss)
+model.fit(x=train_xs, y=train_ys)
+
