@@ -13,10 +13,9 @@ def label_generator(default_bboxes, gt_bboxes):
         이미지 한장에 대해 Detection 을 위한 라벨을 생성합니다.
         라벨 데이터는 값은 default bbox 에 대한 이미지 내 obj 의 상대적 위치 값(delta)로 이루어져 있습니다.
          - 아래 순서로 진행됩니다.
-            1. default bboxes 생성
-            2. default bboxes 와 ground truth 간의 iou 계산
-            3. 학습할 default bbox 선택 (Matching policy)
-            4. delta 계산
+            1. default bboxes 와 ground truth 간의 iou 계산
+            2. 학습할 default bbox 선택 (Matching policy)
+            3. delta 계산
     Args:
         default_bboxes: ndarray, shape=(N_default_bbox, 4=(cx cy ,w, h))
         gt_bboxes: , shape=(N_gt, 4=(cx, cy, w, h))
@@ -25,6 +24,7 @@ def label_generator(default_bboxes, gt_bboxes):
         true_cls: ndarray, (N_default_boxes),
             ⚠️️ 단 배경 클래스는 -1 로 표기되어 있음.
     """
+    # iou 계산
     ious = calculate_iou(default_bboxes, gt_bboxes)
 
     # iou 중 가장 overlay 비율이 큰 class을 선택합니다.
@@ -36,20 +36,22 @@ def label_generator(default_bboxes, gt_bboxes):
     true_cls[background_mask] = -1
 
     # 기존의 정답 데이터에 [0, 0, 0, 0] 을 추가합니다.
-    gt_with_bg = np.concatenate([gt_coords, np.array([[0, 0, 0, 0]])], axis=0)
+    # cx cy w h
+    gt_with_bg = np.concatenate([gt_bboxes, np.array([[0, 0, 0, 0]])], axis=0)
 
     # 각 default boxes에 해당하는 ground truth 의 좌표값을 가져옵니다.
     true_reg = gt_with_bg[true_cls]
 
-    # iou 가 0.5 이상 되는 값들의 index 을 가져옵니다.
-    model_true_bboxes = gt_with_bg[true_cls]
-    pos_mask = np.all(true_reg, axis=-1)
+    # boolean mask 을 생성합니다.
+    pos_mask = (true_cls != -1)
 
-    # delta 값을 계산합니다.
-    pos_true_bboxes = xyxy2xywh(model_true_bboxes[pos_mask])
-    pos_default_boxes = xyxy2xywh(default_boxes[pos_mask])
-    pos_true_delta = calculate_delta(pos_default_boxes, pos_true_bboxes)
-    true_delta = np.zeros_like(default_boxes)
+    # positive 에 대해 delta 값을 계산합니다.
+    pos_rue_reg = true_reg[pos_mask]
+    pos_default_boxes = default_bboxes[pos_mask]
+    pos_true_delta = calculate_delta(pos_default_boxes, pos_rue_reg)
+
+    # 전체 delta 값에 positive delta 값을 넣어줍니다.
+    true_delta = np.zeros_like(default_bboxes)
     true_delta[pos_mask] = pos_true_delta
     return true_delta, true_cls
 
@@ -99,6 +101,7 @@ if __name__ == '__main__':
         true_delta, true_cls = label_generator(default_boxes, gt_coords)
         true_delta_bucket.append(true_delta)
     np.array(true_delta_bucket)
+
     consume_time = time() - s_time
     print('consume_time : {}'.format(consume_time))
     print('transaction units : {}'.format(11000 / consume_time))
