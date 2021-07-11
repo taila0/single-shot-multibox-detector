@@ -21,7 +21,9 @@ def label_generator(default_bboxes, gt_bboxes):
         default_bboxes: ndarray, shape=(N_default_bbox, 4=(cx cy ,w, h))
         gt_bboxes: , shape=(N_gt, 4=(cx, cy, w, h))
     Returns:
-
+        true_delta: ndarray, shape = N_default_boxes, 4=(dx, dy, dw, dh)
+        true_cls: ndarray, (N_default_boxes),
+            ⚠️️ 단 배경 클래스는 -1 로 표기되어 있음.
     """
     ious = calculate_iou(default_bboxes, gt_bboxes)
 
@@ -49,7 +51,7 @@ def label_generator(default_bboxes, gt_bboxes):
     pos_true_delta = calculate_delta(pos_default_boxes, pos_true_bboxes)
     true_delta = np.zeros_like(default_boxes)
     true_delta[pos_mask] = pos_true_delta
-    return true_delta
+    return true_delta, true_cls
 
 
 if __name__ == '__main__':
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     # Get sample image and object coordinates
     trainset = DetectionDataset(data_type='train')
 
-    true_regs = []
+    true_delta_bucket = []
     s_time = time()
     for gt_img, gt_info in tqdm(trainset):
         gt_coords = gt_info.iloc[:, 1:5].values
@@ -94,9 +96,9 @@ if __name__ == '__main__':
         gt_coords = xyxy2xywh(gt_coords)
 
         # 이미지 한장에 대한 detection 라벨을 생성합니다.
-        true_reg = label_generator(default_boxes, gt_coords)
-        true_regs.append(true_reg)
-    np.array(true_regs)
+        true_delta, true_cls = label_generator(default_boxes, gt_coords)
+        true_delta_bucket.append(true_delta)
+    np.array(true_delta_bucket)
     consume_time = time() - s_time
     print('consume_time : {}'.format(consume_time))
     print('transaction units : {}'.format(11000 / consume_time))
