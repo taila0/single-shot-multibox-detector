@@ -33,31 +33,31 @@ def detection_loss(y_true, y_pred):
 
     # get positive negative index for tensor
     # shape = (N_pos, 2=(axis0, axis=1)) or (N_neg, 2=(axis0, axis=1))
-    pos_index_tf = np.stack(np.where(pos_mask), axis=-1)
-    neg_index_tf = np.stack(np.where(neg_mask), axis=-1)
+    pos_index_tf = tf.where(pos_mask)
+    neg_index_tf = tf.where(neg_mask)
 
     # Extract positive dataset
-    pos_true_cls = true_cls[pos_mask]
+    pos_true_cls = tf.gather_nd(true_cls, pos_index_tf)
     pos_pred_cls = tf.gather_nd(pred_cls, pos_index_tf)
-    neg_true_cls = true_cls[neg_mask]
+    neg_true_cls = tf.gather_nd(true_cls, neg_index_tf)
     neg_pred_cls = tf.gather_nd(pred_cls, neg_index_tf)
 
     # Negative 데이터을 positive 3배 비율로 추출합니다.
     n_pos = len(pos_index_tf)
     n_neg = len(neg_index_tf)
-    neg_rand_index = np.arange(n_neg)
-    np.random.shuffle(neg_rand_index)
-    neg_true_cls = neg_true_cls[neg_rand_index][:n_pos * 3]
-    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index)[:n_pos * 3]
-
+    neg_rand_index = tf.range(n_neg)
+    neg_rand_index = tf.random.shuffle(neg_rand_index)
+    neg_true_cls = tf.gather(neg_true_cls, neg_rand_index[:n_pos * 3])
+    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index[:n_pos * 3])
+    #
     trgt_pred_cls = tf.concat([neg_pred_cls, pos_pred_cls], axis=0)
-    trgt_true_cls = np.concatenate([neg_true_cls, pos_true_cls], axis=0)
+    trgt_true_cls = tf.concat([neg_true_cls, pos_true_cls], axis=0)
 
     # Classification loss
     cls_loss = CategoricalCrossentropy()(trgt_true_cls, trgt_pred_cls)
 
     # extract positive localization
-    pos_true_reg = true_reg[pos_mask]
+    pos_true_reg = tf.gather_nd(true_reg, pos_index_tf)
     pos_pred_reg = tf.gather_nd(pred_reg, pos_index_tf)
 
     # Regression loss
