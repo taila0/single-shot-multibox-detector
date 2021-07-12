@@ -113,6 +113,7 @@ for gt_img, gt_info in tqdm(trainset):
     # 각 header 별 delta, cls 을 각 global bucket 에 추가합니다.
     trues.append(true)
     true_imgs.append(gt_img)
+
 os.makedirs('../datasets', exist_ok=True)
 np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))

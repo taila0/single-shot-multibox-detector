@@ -6,8 +6,8 @@ from tensorflow.keras.utils import to_categorical
 from loss import detection_loss
 
 # load dataset
-train_xs = np.load('../datasets/true_images.npy')
-train_ys = np.load('../datasets/true_labels.npy')
+train_xs = np.load('../datasets/debug_true_images.npy')
+train_ys = np.load('../datasets/debug_true_labels.npy')
 input_shape = train_xs.shape[1:]
 n_classes = 11
 train_ys_cls = train_ys[..., 4:]
@@ -35,6 +35,8 @@ pred_merged_loc = tf.concat(
 pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
 pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
 print('Model generated \nModel output shape : {}'.format(pred.get_shape()))
+
+# detection_loss(train_ys, pred)
 
 model = Model(inputs, pred)
 model.compile('adam', loss=detection_loss)
