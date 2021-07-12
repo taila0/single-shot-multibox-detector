@@ -44,9 +44,9 @@ def calculate_gt(default_boxes, delta_hat):
     :return: gt_hat, ndarray, (N_default_boxes, 4=(x̂ ŷ ŵ ĥ))
 
     """
-    x_hat = (delta_hat[:, 0] * default_boxes[:, 2]) + default_boxes[:, 0]
-    y_hat = (delta_hat[:, 1] * default_boxes[:, 3]) + default_boxes[:, 1]
-    w_hat = np.exp(np.log(default_boxes[:, 2]) + delta_hat[:, 2])
-    h_hat = np.exp(np.log(default_boxes[:, 3]) + delta_hat[:, 3])
+    x_hat = (delta_hat[..., 0] * default_boxes[..., 2]) + default_boxes[..., 0]
+    y_hat = (delta_hat[..., 1] * default_boxes[..., 3]) + default_boxes[..., 1]
+    w_hat = np.exp(np.log(default_boxes[..., 2]) + delta_hat[..., 2])
+    h_hat = np.exp(np.log(default_boxes[..., 3]) + delta_hat[..., 3])
     gt_hat = np.stack([x_hat, y_hat, w_hat, h_hat], axis=-1)
     return gt_hat
