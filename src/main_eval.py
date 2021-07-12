@@ -49,7 +49,6 @@ for onehot_, loc_, cls_ in zip(onehot_per_img, loc_per_img, cls_per_img):
     final_bboxes, _ = non_maximum_suppression(loc_, onehot_, 0.5)
     final_bboxes = xywh2xyxy(np.array(final_bboxes))
     nms_bboxes.append(final_bboxes)
-    print(cls_)
 
 rected_images = images_with_rectangles(train_xs * 255, nms_bboxes)
-plot_images(train_xs)
+plot_images(rected_images)

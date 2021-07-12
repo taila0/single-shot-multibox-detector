@@ -8,13 +8,13 @@ from loss import detection_loss
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
 train_ys = np.load('../datasets/debug_true_labels.npy')
+
 input_shape = train_xs.shape[1:]
 n_classes = 11
 train_ys_cls = train_ys[..., 4:]
 train_ys_cls = np.where(train_ys_cls == -1, 10, train_ys_cls)
 train_ys_cls = to_categorical(train_ys_cls, num_classes=11)
 train_ys = np.concatenate([train_ys[..., :4], train_ys_cls], axis=-1)
-print(train_xs.shape, train_ys.shape)
 
 # Generate detection SSD model
 n_boxes = 5
@@ -41,4 +41,3 @@ detection_loss(train_ys, pred)
 model = Model(inputs, pred)
 model.compile('adam', loss=detection_loss)
 model.fit(x=train_xs, y=train_ys)
-
