@@ -5,9 +5,13 @@ import tensorflow as tf
 def detection_loss(y_true, y_pred):
     """
     Description:
+        아래 코드는 keras model.fit 에서 작동하기 위해 설계 및 구현되어 있습니다.
+        Tensorflow Graph 모드에서 작동하는것을 기반으로 생각하고 있습니다.
+
         일번적인 detection model 의 loss 을 구합니다.
         구해야 할 loss는 아래와 같습니다.
         loss = Classification loss + Regression loss
+
 
         Classification loss:
             모든 데이터에 대해 classification loss 을 계산합니다.
@@ -46,8 +50,8 @@ def detection_loss(y_true, y_pred):
     n_neg = len(neg_index_tf)
     neg_rand_index = tf.range(n_neg)
     neg_rand_index = tf.random.shuffle(neg_rand_index)
-    neg_true_cls = tf.gather(neg_true_cls, neg_rand_index[:n_pos * 3])
-    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index[:n_pos * 3])
+    neg_true_cls = tf.gather(neg_true_cls, neg_rand_index[:n_pos * 1])
+    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index[:n_pos * 1])
     #
     trgt_pred_cls = tf.concat([neg_pred_cls, pos_pred_cls], axis=0)
     trgt_true_cls = tf.concat([neg_true_cls, pos_true_cls], axis=0)
