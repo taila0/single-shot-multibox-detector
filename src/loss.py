@@ -1,6 +1,5 @@
 from tensorflow.keras.losses import MSE, CategoricalCrossentropy
 import tensorflow as tf
-import numpy as np
 
 
 def detection_loss(y_true, y_pred):
