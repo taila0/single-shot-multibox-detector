@@ -47,8 +47,8 @@ def label_generator(default_bboxes, gt_bboxes):
 
     # positive 에 대해 delta 값을 계산합니다.
     pos_true_reg = true_reg[pos_mask]
-    pos_default_boxes = default_bboxes[pos_mask]
-    pos_true_delta = calculate_delta(pos_default_boxes, pos_true_reg)
+    pos_default_bboxes = default_bboxes[pos_mask]
+    pos_true_delta = calculate_delta(pos_default_bboxes, pos_true_reg)
 
     # 전체 delta 값에 positive delta 값을 넣어줍니다.
     true_delta = np.zeros_like(default_bboxes)
@@ -103,3 +103,7 @@ if __name__ == '__main__':
     consume_time = time() - s_time
     print('consume_time : {}'.format(consume_time))
     print('transaction units : {}'.format(11000 / consume_time))
+
+
+# Checking Generated Dataset
+# positive 한 영역에서 박스가 쳐지는 지 확인합니다
