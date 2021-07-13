@@ -46,9 +46,9 @@ def label_generator(default_bboxes, gt_bboxes):
     pos_mask = (true_cls != -1)
 
     # positive 에 대해 delta 값을 계산합니다.
-    pos_rue_reg = true_reg[pos_mask]
+    pos_true_reg = true_reg[pos_mask]
     pos_default_boxes = default_bboxes[pos_mask]
-    pos_true_delta = calculate_delta(pos_default_boxes, pos_rue_reg)
+    pos_true_delta = calculate_delta(pos_default_boxes, pos_true_reg)
 
     # 전체 delta 값에 positive delta 값을 넣어줍니다.
     true_delta = np.zeros_like(default_bboxes)
@@ -90,12 +90,10 @@ if __name__ == '__main__':
     s_time = time()
     for gt_img, gt_info in tqdm(trainset):
         gt_coords = gt_info.iloc[:, 1:5].values
-        gt_coords = xywh2xyxy(gt_coords)
         gt_labels = gt_info.iloc[:, -1].values
 
         # ground truth coordinates(x1, y1, x2, y2), shape = (N_obj, 4)
         gt_coords = gt_coords.reshape(-1, 4)
-        gt_coords = xyxy2xywh(gt_coords)
 
         # 이미지 한장에 대한 detection 라벨을 생성합니다.
         true_delta, true_cls = label_generator(default_boxes, gt_coords)
