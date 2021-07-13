@@ -18,6 +18,7 @@ def calculate_delta(default_boxes, ground_truth):
     :return: delta, ndarray, (N_default_boxes, 4=(Δx Δy Δw Δh))
 
     """
+
     # coordinates -> delta
     dx = (ground_truth[:, 0] - default_boxes[:, 0]) / default_boxes[:, 2]
     dy = (ground_truth[:, 1] - default_boxes[:, 1]) / default_boxes[:, 3]
