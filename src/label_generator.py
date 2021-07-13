@@ -1,7 +1,6 @@
 from dataset import DetectionDataset
 from delta import calculate_delta
 from default_boxes import *
-from utils import xywh2xyxy, xyxy2xywh
 from iou import calculate_iou
 from tqdm import tqdm
 from time import time
@@ -98,8 +97,8 @@ if __name__ == '__main__':
         # 이미지 한장에 대한 detection 라벨을 생성합니다.
         true_delta, true_cls = label_generator(default_boxes, gt_coords)
         true_delta_bucket.append(true_delta)
-    np.array(true_delta_bucket)
 
+    true_delta_bucket = np.array(true_delta_bucket)
     consume_time = time() - s_time
     print('consume_time : {}'.format(consume_time))
     print('transaction units : {}'.format(11000 / consume_time))
