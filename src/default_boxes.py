@@ -189,6 +189,7 @@ def generate_tiling_default_boxes(**kwargs):
     default_boxes_sizes = generate_default_boxes(scales, ratios)
 
     # original image 와 좌표 위치가 매칭된 feature map의 모든 cell에 적용된 default boxes의 좌표값을 반환합니다.
+    # shape= (f_h * f_w, n_scale* n_ratio, 4) (f=feature_map)
     default_boxes = tiling_default_boxes(center_xy, default_boxes_sizes)
     return default_boxes
 
@@ -199,7 +200,7 @@ if __name__ == '__main__':
     paddings = ['SAME'] * n_layer
     kernel_sizes = [3] * n_layer
     strides = [1, 1, 1, 1, 2, 1, 2]
-    scales = [10, 25, 40]
+    scales = [10]
     ratios = [(1, 1), (1.5, 0.5), (1.2, 0.8), (0.8, 1.2), (1.4, 1.4)]
 
     # Get default boxes over feature map
