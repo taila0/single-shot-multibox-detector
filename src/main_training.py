@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import to_categorical
-from loss import detection_loss
+from loss import detection_loss, ssd_loss
 
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
@@ -26,6 +26,7 @@ n_head = len(multi_head_loc)
 # classification, localization head 을 합침
 # cls: (N, h, w, n_classes * 5) -> (N, h * w, n_classes*5),
 # loc: (N, h, w, 4*5) -> (N, h * w, 4*5)
+
 pred_merged_cls = tf.concat(
     [tf.reshape(head_cls, (-1, np.prod(head_cls.get_shape()[1:3]), n_boxes, n_classes)) for head_cls in multi_head_cls],
     axis=1)
@@ -36,8 +37,8 @@ pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
 pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
 print('Model generated \nModel output shape : {}'.format(pred.get_shape()))
 
-detection_loss(train_ys, pred)
-
 model = Model(inputs, pred)
 model.compile('adam', loss=detection_loss)
+
+pred_ = model.predict(train_xs)
 model.fit(x=train_xs, y=train_ys)
