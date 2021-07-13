@@ -7,6 +7,7 @@ from tqdm import tqdm
 from time import time
 import numpy as np
 import tensorflow as tf
+import pickle
 
 # Load dataset
 trainset = DetectionDataset(data_type='train')
@@ -78,6 +79,9 @@ for head_ind in tqdm(range(n_head)):
     default_boxes = default_boxes.reshape(-1, 4)
     default_boxes_bucket.append(default_boxes)
 
+f = open('../datasets/default_boxes_bucket.pkl', 'wb')
+pickle.dump(default_boxes_bucket, f)
+
 # 모든 이미지 당 header 별 delta, cls 정답값을 수집합니다.
 trues = []
 true_imgs = []
@@ -99,13 +103,13 @@ for gt_img, gt_info in tqdm(trainset):
         each_header_loc.append(true_delta)
         each_header_cls.append(true_cls)
 
-    # (N_a, *n_anchor), (N_b, 11*n_anchor), (N_c, 11*n_anchor) -> (N_a + N_b + N_c, 11*n_anchor)
+    # (N_a, 11*n_anchor), (N_b, 11*n_anchor), (N_c, 11*n_anchor) -> (N_a + N_b + N_c, 11*n_anchor)
     true_head_loc = np.concatenate(each_header_loc, axis=0)
 
-    # (N_a, 4*n_anchor), (N_b, 4*n_anchor), (N_c, 4*n_anchor) -> (N_a + N_b + N_c, 4*n_anchor)
+    # (N_a, 1*n_anchor), (N_b, 1*n_anchor), (N_c, 1*n_anchor) -> (N_a + N_b + N_c, 1*n_anchor)
     true_head_cls = np.concatenate(each_header_cls, axis=0)
 
-    # (N_a + N_b + N_c, 4*n_anchor), (N_a + N_b + N_c) -> (N_a + N_b + N_c, 11*n_anchor + 4*n_anchor)
+    # (N_a + N_b + N_c, 4*n_anchor), (N_a + N_b + N_c) -> (N_a + N_b + N_c, 11*n_anchor + 1*n_anchor)
     true = np.concatenate([true_head_loc, true_head_cls[:, None]], axis=-1)
 
     # 각 header 별 delta, cls 을 각 global bucket 에 추가합니다.
