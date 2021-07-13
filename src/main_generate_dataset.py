@@ -3,7 +3,6 @@ from label_generator import label_generator
 from model import simple_detection_netowrk
 from dataset import DetectionDataset
 from default_boxes import generate_tiling_default_boxes
-from utils import xywh2xyxy
 from tqdm import tqdm
 from time import time
 import numpy as np
@@ -13,7 +12,6 @@ import tensorflow as tf
 trainset = DetectionDataset(data_type='train')
 gt_img, gt_info = trainset[0]
 gt_coords = gt_info.iloc[:, 1:5].values
-gt_coords = xywh2xyxy(gt_coords)
 gt_labels = gt_info.iloc[:, -1].values
 n_classes = 10 + 1
 
@@ -90,7 +88,7 @@ for gt_img, gt_info in tqdm(trainset):
     gt_coords = gt_info.iloc[:, 1:5].values
     gt_labels = gt_info.iloc[:, -1].values
 
-    # ground truth coordinates(x1, y1, x2, y2), shape = (N_obj, 4)
+    # ground truth coordinates(xcx cy w h), shape = (N_obj, 4)
     gt_coords = gt_coords.reshape(-1, 4)
 
     # 각 header 별 delta, cls 을 구합니다.
