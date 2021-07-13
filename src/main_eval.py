@@ -11,7 +11,6 @@ model = load_model('../models/model.h5', custom_objects={'detection_loss': detec
 
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
-train_ys = np.load('../datasets/debug_true_labels.npy')
 
 # load default_boxes
 f = open('../datasets/default_boxes_bucket.pkl', 'rb')
