@@ -75,16 +75,14 @@ def ssd_loss(y_true, y_pred):
     pos_neg_ratio = 3.
     num_classes = tf.shape(y_true)[2] - 4
     y_true = tf.reshape(y_true, [-1, num_classes + 4])
+    y_true = tf.cast(y_true, tf.float64)
     y_pred = tf.reshape(y_pred, [-1, num_classes + 4])
+    y_pred = tf.cast(y_pred, tf.float64)
     eps = K.epsilon()
 
     # Split Classification and Localization output
-    y_true_clf, y_true_loc = tf.split(y_true,
-                                      [num_classes, 4],
-                                      axis=-1)
-    y_pred_clf, y_pred_loc = tf.split(y_pred,
-                                      [num_classes, 4],
-                                      axis=-1)
+    y_true_loc, y_true_clf = tf.split(y_true, [4, num_classes], axis=-1)
+    y_pred_loc, y_pred_clf = tf.split(y_pred, [4, num_classes], axis=-1)
 
     # split foreground & background
     neg_mask = y_true_clf[:, -1]
@@ -95,12 +93,10 @@ def ssd_loss(y_true, y_pred):
 
     # softmax loss
     y_pred_clf = K.clip(y_pred_clf, eps, 1. - eps)
-    clf_loss = -tf.reduce_sum(y_true_clf * tf.log(y_pred_clf),
-                              axis=-1)
+    clf_loss = -tf.reduce_sum(y_true_clf * tf.math.log(y_pred_clf), axis=-1)
     pos_clf_loss = tf.reduce_sum(clf_loss * pos_mask) / (num_pos + eps)
     neg_clf_loss = clf_loss * neg_mask
-    values, indices = tf.nn.top_k(neg_clf_loss,
-                                  k=tf.cast(num_neg, tf.int32))
+    values, indices = tf.nn.top_k(neg_clf_loss, k=tf.cast(num_neg, tf.int32))
     neg_clf_loss = tf.reduce_sum(values) / (num_neg + eps)
     clf_loss = pos_clf_loss + neg_clf_loss
 
