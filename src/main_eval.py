@@ -1,6 +1,6 @@
 from tensorflow.keras.models import load_model
 from delta import calculate_gt
-from loss import detection_loss
+from loss import detection_loss, ssd_loss
 import numpy as np
 import pickle
 from nms import non_maximum_suppression
@@ -50,5 +50,7 @@ for onehot_, loc_, cls_ in zip(onehot_per_img, loc_per_img, cls_per_img):
     nms_bboxes.append(final_bboxes)
 
 # visualization
+print(pos_cls)
+
 rected_images = images_with_rectangles(train_xs * 255, nms_bboxes)
 plot_images(rected_images)

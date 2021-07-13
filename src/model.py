@@ -78,3 +78,4 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
     soft5_5 = Softmax(name='soft5_5')(clss5_3)
     locz5_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz5_6')(norm5_2)
     return inputs, (soft3_5, locz3_6), (soft4_5, locz4_6), (soft5_5, locz5_6)
+
