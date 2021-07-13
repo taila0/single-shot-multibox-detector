@@ -51,8 +51,8 @@ def detection_loss(y_true, y_pred):
     n_neg = len(neg_index_tf)
     neg_rand_index = tf.range(n_neg)
     neg_rand_index = tf.random.shuffle(neg_rand_index)
-    neg_true_cls = tf.gather(neg_true_cls, neg_rand_index[:n_pos * 1])
-    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index[:n_pos * 1])
+    neg_true_cls = tf.gather(neg_true_cls, neg_rand_index[:n_pos * 3])
+    neg_pred_cls = tf.gather(neg_pred_cls, neg_rand_index[:n_pos * 3])
     #
     trgt_pred_cls = tf.concat([neg_pred_cls, pos_pred_cls], axis=0)
     trgt_true_cls = tf.concat([neg_true_cls, pos_true_cls], axis=0)
