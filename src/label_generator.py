@@ -43,6 +43,7 @@ def label_generator(default_bboxes, gt_bboxes):
 
     # boolean mask 을 생성합니다.
     pos_mask = (true_cls != -1)
+    pos_cls = np.where(pos_mask)
 
     # positive 에 대해 delta 값을 계산합니다.
     pos_true_reg = true_reg[pos_mask]
