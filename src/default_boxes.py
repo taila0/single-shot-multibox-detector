@@ -134,7 +134,7 @@ def original_rectangle_coords(fmap_size, kernel_sizes, strides, paddings):
     n_samples = len(xs)
 
     # coords = ((cx, cy, w, h), (cx, cy, w, h) ... (cx, cy, w, h))
-    coords = np.stack([ys, xs, [rf] * n_samples, [rf] * n_samples], axis=-1)
+    coords = np.stack([xs, ys, [rf] * n_samples, [rf] * n_samples], axis=-1)
     return coords
 
 
