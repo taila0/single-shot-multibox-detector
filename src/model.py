@@ -64,17 +64,17 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
     norm5_2 = BatchNormalization(name='norm5_2')(conv5_2)
 
     # multi head 3
-    clss3_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas3_3')(norm3_2)
+    clss3_3 = Conv2D(n_anchors * n_classes, (1, 1), padding='same', activation=None, name='clas3_3')(norm3_2)
     soft3_5 = Softmax(axis=-1, name='soft3_5')(clss3_3)
     locz3_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz3_6')(norm3_2)
 
     # multi head 4
-    clss4_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas4_3')(norm4_2)
+    clss4_3 = Conv2D(n_anchors * n_classes, (1, 1), padding='same', activation=None, name='clas4_3')(norm4_2)
     soft4_5 = Softmax(axis=-1, name='soft4_5')(clss4_3)
     locz4_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz4_6')(norm4_2)
 
     # multi head 5
-    clss5_3 = Conv2D(n_anchors * n_classes, (3, 3), padding='same', activation=None, name='clas5_3')(norm5_2)
+    clss5_3 = Conv2D(n_anchors * n_classes, (1, 1), padding='same', activation=None, name='clas5_3')(norm5_2)
     soft5_5 = Softmax(axis=-1, name='soft5_5')(clss5_3)
     locz5_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz5_6')(norm5_2)
     return inputs, (soft3_5, locz3_6), (soft4_5, locz4_6), (soft5_5, locz5_6)
