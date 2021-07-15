@@ -63,6 +63,8 @@ for head_ind in tqdm(range(n_head)):
     default_boxes = default_boxes.reshape(-1, 4)
     default_boxes_bucket.append(default_boxes)
 
+# Save default boxes
+os.makedirs('../datasets', exist_ok=True)
 f = open('../datasets/default_boxes_bucket.pkl', 'wb')
 pickle.dump(default_boxes_bucket, f)
 
@@ -100,7 +102,7 @@ for gt_img, gt_info in tqdm(trainset):
     trues.append(true)
     true_imgs.append(gt_img)
 
-os.makedirs('../datasets', exist_ok=True)
+
 np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))
 
