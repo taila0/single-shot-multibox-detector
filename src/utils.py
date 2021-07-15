@@ -172,7 +172,7 @@ def draw_rectangle(img, coordinate, color=(255, 0, 0)):
     return cv2.rectangle(img, (x_min, y_min), (x_max, y_max), color=color)
 
 
-def draw_rectangles(img, coordinates):
+def draw_rectangles(img, coordinates, color=(255, 0, 0)):
     """
     Description:
     하나의 img 에 복수개의  bounding box 을 그리는 함수.
@@ -183,11 +183,11 @@ def draw_rectangles(img, coordinates):
     :return: img: ndarray, 3d array, shape = (H, W, CH)
     """
     for coord in coordinates:
-        img = draw_rectangle(img, coord)
+        img = draw_rectangle(img, coord, color)
     return np.array(img)
 
 
-def images_with_rectangles(imgs, bboxes_bucket):
+def images_with_rectangles(imgs, bboxes_bucket, color=(255, 0, 0)):
     """
     여러개의 이미지에 여러개의 bouding box 을 그리는 알고리즘.
 
@@ -207,7 +207,7 @@ def images_with_rectangles(imgs, bboxes_bucket):
         if img.shape[-1] == 1:
             img = np.squeeze(img)
         # draw bbox img
-        bboxes_img = draw_rectangles(img, bboxes)
+        bboxes_img = draw_rectangles(img, bboxes, color)
         boxed_imgs.append(bboxes_img)
     return boxed_imgs
 
