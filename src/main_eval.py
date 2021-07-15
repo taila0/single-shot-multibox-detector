@@ -7,7 +7,7 @@ from nms import non_maximum_suppression
 from utils import images_with_rectangles, plot_images, xywh2xyxy, draw_rectangles
 
 # load models
-model = load_model('../models/model.h5', custom_objects={'detection_loss': detection_loss})
+model = load_model('../models/best_model.h5', custom_objects={'ssd_loss': ssd_loss})
 
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
@@ -22,8 +22,8 @@ pred_ = model.predict(x=train_xs)
 pred_onehot = pred_[..., 4:]
 pred_loc = pred_[..., :4]
 
-# recorver default boxes
-gt_hat = calculate_gt(default_boxes, pred_)
+# recorver ground truth
+gt_hat = calculate_gt(default_boxes, pred_loc)
 
 # get positive bool mask, shape (N_img, N_default_boxes)
 pred_cls = np.argmax(pred_onehot, axis=-1)
@@ -37,10 +37,10 @@ for mask, loc, cls, onehot in zip(pos_mask_bucket, gt_hat, pred_cls, pred_onehot
     pos_loc = loc[mask]
     pos_cls = cls[mask]
     pos_mask = onehot[mask]
+    print(pos_cls)
     loc_per_img.append(pos_loc)
     cls_per_img.append(pos_cls)
     onehot_per_img.append(pos_mask)
-
 
 # Non Maximum Suppression per image
 nms_bboxes = []
@@ -50,7 +50,6 @@ for onehot_, loc_, cls_ in zip(onehot_per_img, loc_per_img, cls_per_img):
     nms_bboxes.append(final_bboxes)
 
 # visualization
-print(pos_cls)
-
 rected_images = images_with_rectangles(train_xs * 255, nms_bboxes)
 plot_images(rected_images)
+

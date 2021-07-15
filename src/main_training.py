@@ -6,8 +6,8 @@ from tensorflow.keras.utils import to_categorical
 from loss import detection_loss, ssd_loss
 
 # load dataset
-train_xs = np.load('../datasets/true_images.npy')
-train_ys = np.load('../datasets/true_labels.npy')
+train_xs = np.load('../datasets/debug_true_images.npy')
+train_ys = np.load('../datasets/debug_true_images.npy')
 
 input_shape = train_xs.shape[1:]
 n_classes = 11
