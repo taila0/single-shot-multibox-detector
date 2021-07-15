@@ -6,7 +6,7 @@ from tqdm import tqdm
 from time import time
 
 
-def label_generator(default_bboxes, gt_bboxes):
+def label_generator(default_bboxes, gt_bboxes, gt_classes, n_classes):
     """
     Desscription:
         이미지 한장에 대해 Detection 을 위한 라벨을 생성합니다.
@@ -18,6 +18,8 @@ def label_generator(default_bboxes, gt_bboxes):
     Args:
         default_bboxes: ndarray, shape=(N_default_bbox, 4=(cx cy ,w, h))
         gt_bboxes: , shape=(N_gt, 4=(cx, cy, w, h))
+        gt_classes: shape=(N_gt), ground truth 에 들어 있는 정답값
+
     Returns:
         true_delta: ndarray, shape = N_default_boxes, 4=(dx, dy, dw, dh)
         true_cls: ndarray, (N_default_boxes),
@@ -26,24 +28,25 @@ def label_generator(default_bboxes, gt_bboxes):
     # iou 계산
     ious = calculate_iou(default_bboxes, gt_bboxes)
 
-    # iou 중 가장 overlay 비율이 큰 class을 선택합니다.
+    # iou 중 가장 overlay 비율이 큰 Index 선택합니다.
     # shape = (N_default_boxes, )
-    true_cls = np.argmax(ious, axis=-1)
+    iou_max_index = np.argmax(ious, axis=-1)
 
     # 모든 obj 에 대해 iou 가 0.5 이하이면 background class, -1로 지정합니다.
     background_mask = np.all(ious < 0.5, axis=-1)
-    true_cls[background_mask] = -1
+    iou_max_index[background_mask] = -1
+    gt_classes = np.concatenate([gt_classes, np.array([n_classes - 1])])
+    true_cls = gt_classes[iou_max_index]
 
     # 기존의 정답 데이터에 [0, 0, 0, 0] 을 추가합니다.
     # cx cy w h
     gt_with_bg = np.concatenate([gt_bboxes, np.array([[0, 0, 0, 0]])], axis=0)
 
     # 각 default boxes에 해당하는 ground truth 의 좌표값을 가져옵니다.
-    true_reg = gt_with_bg[true_cls]
+    true_reg = gt_with_bg[iou_max_index]
 
     # boolean mask 을 생성합니다.
-    pos_mask = (true_cls != -1)
-    pos_cls = np.where(pos_mask)
+    pos_mask = (iou_max_index != -1)
 
     # positive 에 대해 delta 값을 계산합니다.
     pos_true_reg = true_reg[pos_mask]
@@ -60,6 +63,7 @@ if __name__ == '__main__':
     # Generate default bboxes
     fmap = tf.constant(shape=(2, 8, 8, 2), value=1)
     h, w = fmap.get_shape()[1:3]
+    n_classes = 11
     n_layer = 11
     paddings = ['SAME'] * n_layer
     strides = [1, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2]
@@ -96,7 +100,7 @@ if __name__ == '__main__':
         gt_coords = gt_coords.reshape(-1, 4)
 
         # 이미지 한장에 대한 detection 라벨을 생성합니다.
-        true_delta, true_cls = label_generator(default_boxes, gt_coords)
+        true_delta, true_cls = label_generator(default_boxes, gt_coords, gt_labels, n_classes)
         true_delta_bucket.append(true_delta)
 
     true_delta_bucket = np.array(true_delta_bucket)

@@ -85,7 +85,7 @@ for gt_img, gt_info in tqdm(trainset):
     each_header_loc = []
     each_header_cls = []
     for default_boxes in default_boxes_bucket:
-        true_delta, true_cls = label_generator(default_boxes, gt_coords)
+        true_delta, true_cls = label_generator(default_boxes, gt_coords, gt_labels, n_classes)
         each_header_loc.append(true_delta)
         each_header_cls.append(true_cls)
 
