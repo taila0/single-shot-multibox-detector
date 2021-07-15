@@ -90,6 +90,6 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
     locz5_6 = Reshape((-1, 4))(locz5_6)
     head_5 = Concatenate(axis=-1)([locz5_6, soft5_5])
 
-    predict = Concatenate(axis=-1)([head_3, head_4, head_5])
+    predict = Concatenate(axis=1)([head_3, head_4, head_5])
 
     return inputs, predict
