@@ -6,8 +6,8 @@ from tensorflow.keras.utils import to_categorical
 from loss import detection_loss, ssd_loss
 
 # load dataset
-train_xs = np.load('../datasets/debug_true_images.npy')
-train_ys = np.load('../datasets/debug_true_labels.npy')
+train_xs = np.load('../datasets/true_images.npy')
+train_ys = np.load('../datasets/true_labels.npy')
 
 input_shape = train_xs.shape[1:]
 n_classes = 11
@@ -21,7 +21,7 @@ n_boxes = 5
 inputs, predictions = simple_detection_netowrk(input_shape, n_boxes, n_classes)
 
 model = Model(inputs, predictions)
-model.compile('adam', loss=detection_loss)
+model.compile('adam', loss=ssd_loss)
 
 pred_ = model.predict(train_xs)
 model.fit(x=train_xs, y=train_ys)
