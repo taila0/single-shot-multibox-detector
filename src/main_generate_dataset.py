@@ -25,18 +25,6 @@ multi_head_cls = [cls3_5, cls4_5, cls5_5]
 multi_head_loc = [loc3_7, loc4_7, loc5_7]
 n_head = len(multi_head_loc)
 
-# classification, localization head 을 합침
-# cls: (N, h, w, n_classes * 5) -> (N, h * w, n_classes*5),
-# loc: (N, h, w, 4*5) -> (N, h * w, 4*5)
-pred_merged_cls = tf.concat(
-    [tf.reshape(head_cls, (-1, np.prod(head_cls.get_shape()[1:3]), n_boxes, n_classes)) for head_cls in multi_head_cls],
-    axis=1)
-pred_merged_loc = tf.concat(
-    [tf.reshape(head_loc, (-1, np.prod(head_loc.get_shape()[1:3]), n_boxes, 4)) for head_loc in multi_head_loc],
-    axis=1)
-pred = tf.concat([pred_merged_loc, pred_merged_cls], axis=-1)
-pred = tf.reshape(pred, shape=(-1, np.prod(pred.get_shape()[1:3]), n_classes + 4))
-
 # 각 header 는 하나의 scale 을 사용함, ratio 는 공유
 scales = [10, 25, 40]
 ratios = [(1, 1), (1.5, 0.5), (1.2, 0.8), (0.8, 1.2), (1.4, 1.4)]
@@ -65,6 +53,7 @@ default_boxes_bucket = []
 for head_ind in tqdm(range(n_head)):
     # get feature map size
     trgt_fmap_size = multi_head_cls[head_ind].get_shape()[1:3]
+
     trgt_scale = scales[head_ind]
     trgt_paddings = stem_paddings + block_padding * (head_ind + 1)
     trgt_kernel_sizes = stem_kernel_sizes + block_kernel_sizes * (head_ind + 1)
