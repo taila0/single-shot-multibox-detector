@@ -1,6 +1,5 @@
 from model import simple_detection_netowrk
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.utils import to_categorical
 from loss import detection_loss, ssd_loss

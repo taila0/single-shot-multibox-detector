@@ -52,4 +52,3 @@ for onehot_, loc_, cls_ in zip(onehot_per_img, loc_per_img, cls_per_img):
 # visualization
 rected_images = images_with_rectangles(train_xs * 255, nms_bboxes)
 plot_images(rected_images)
-

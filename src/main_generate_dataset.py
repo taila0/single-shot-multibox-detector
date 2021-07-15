@@ -25,7 +25,6 @@ n_head = len(fmaps)
 scales = [10, 25, 40]
 ratios = [(1, 1), (1.5, 0.5), (1.2, 0.8), (0.8, 1.2), (1.4, 1.4)]
 
-
 # stem layer , block 2 마지막 layer 까지 layer argument 정의(※ 모든 multi head 는 root 을 공유함)
 stem_n_layer = 5
 stem_paddings = ['SAME'] * stem_n_layer
@@ -101,7 +100,6 @@ for gt_img, gt_info in tqdm(trainset):
     # 각 header 별 delta, cls 을 각 global bucket 에 추가합니다.
     trues.append(true)
     true_imgs.append(gt_img)
-
 
 np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))
