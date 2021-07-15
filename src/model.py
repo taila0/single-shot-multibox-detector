@@ -70,6 +70,7 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
 
     locz3_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz3_6')(norm3_2)
     locz3_6 = Reshape((-1, 4))(locz3_6)
+    head_3 = Concatenate(axis=-1)([locz3_6, soft3_5])
 
     # multi head 4
     clss4_3 = Conv2D(n_anchors * n_classes, (1, 1), padding='same', activation=None, name='clas4_3')(norm4_2)
@@ -78,6 +79,7 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
 
     locz4_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz4_6')(norm4_2)
     locz4_6 = Reshape((-1, 4))(locz4_6)
+    head_4 = Concatenate(axis=-1)([locz4_6, soft4_5])
 
     # multi head 5
     clss5_3 = Conv2D(n_anchors * n_classes, (1, 1), padding='same', activation=None, name='clas5_3')(norm5_2)
@@ -86,10 +88,8 @@ def simple_detection_netowrk(input_shape, n_anchors, n_classes):
 
     locz5_6 = Conv2D(n_anchors * 4, (3, 3), padding='same', activation=None, name='locz5_6')(norm5_2)
     locz5_6 = Reshape((-1, 4))(locz5_6)
+    head_5 = Concatenate(axis=-1)([locz5_6, soft5_5])
 
-    clss = Concatenate(axis=1)([soft3_5, soft4_5, soft5_5])
-    locz = Concatenate(axis=1)([locz3_6, locz4_6, locz5_6])
+    predict = Concatenate(axis=-1)([head_3, head_4, head_5])
 
-    locz_clss = Concatenate(axis=-1)([locz, clss])
-
-    return inputs, locz_clss
+    return inputs, predict
