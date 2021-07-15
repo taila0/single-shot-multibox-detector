@@ -1,6 +1,5 @@
 import os
 from label_generator import label_generator
-from model import simple_detection_netowrk
 from dataset import DetectionDataset
 from default_boxes import generate_tiling_default_boxes
 from tqdm import tqdm
@@ -103,6 +102,9 @@ for gt_img, gt_info in tqdm(trainset):
 
 np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))
+np.save('../datasets/debug_true_labels.npy', np.array(trues[:100]))
+np.save('../datasets/debug_true_images.npy', np.array(true_imgs[:100]))
+
 
 consume_time = time() - s_time
 print('consume_time : {}'.format(consume_time))
