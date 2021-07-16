@@ -11,44 +11,64 @@ model = load_model('../models/best_model.h5', custom_objects={'ssd_loss': ssd_lo
 
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
+train_ys = np.load('../datasets/debug_true_labels.npy')
+
+trues_delta = xywh2xyxy(train_ys[..., :4])
+trues_cls = train_ys[..., -1]
 
 # load default_boxes
 f = open('../datasets/default_boxes_bucket.pkl', 'rb')
 default_boxes_bucket = pickle.load(f)
 default_boxes = np.concatenate(default_boxes_bucket, axis=0)
 
-# predictions
-pred_ = model.predict(x=train_xs)
-pred_onehot = pred_[..., 4:]
-pred_loc = pred_[..., :4]
+# predictions with batch images
+preds = model.predict(x=train_xs)
+preds_onehot = preds[..., 4:]  # shape=(N_img, N_anchor, n_classes)
+preds_delta = preds[..., :4]  # shape=(N_img, N_anchor, 4)
 
-# recorver ground truth
-gt_hat = calculate_gt(default_boxes, pred_loc)
+# recorver ground truths
+gts_hat = calculate_gt(default_boxes, preds_delta)  # shape=(N_img, N_anchor, 4)
+gts = calculate_gt(default_boxes, trues_delta)  # shape=(N_img, N_anchor, 4)
 
-# get positive bool mask, shape (N_img, N_default_boxes)
-pred_cls = np.argmax(pred_onehot, axis=-1)
-pos_mask_bucket = (pred_cls != 10)
+# get positive bool mask for prediction, shape (N_img, N_default_boxes)
+preds_cls = np.argmax(preds_onehot, axis=-1)  # shape (N_img, N_default_boxes)
+pos_preds_mask = (preds_cls != 10)  # shape (N_img, N_default_boxes)
+
+# get positive bool mask for true, shape (N_img, N_default_boxes)
+pos_trues_mask = (trues_cls != 10)  # shape (N_img, N_default_boxes)
 
 # 이미지 한장당 positive localization, classification 정보를 가져옵니다.
-loc_per_img = []
-cls_per_img = []
-onehot_per_img = []
-for mask, loc, cls, onehot in zip(pos_mask_bucket, gt_hat, pred_cls, pred_onehot):
-    pos_loc = loc[mask]
-    pos_cls = cls[mask]
-    pos_mask = onehot[mask]
-    print(pos_cls)
-    loc_per_img.append(pos_loc)
-    cls_per_img.append(pos_cls)
-    onehot_per_img.append(pos_mask)
+pos_preds_loc = []
+pos_preds_cls = []
+pos_preds_onehot = []
+for pos_pred_mask, gt_hat, pred_cls, pred_onehot in zip(pos_preds_mask, gts_hat, preds_cls, preds_onehot):
+    pos_loc = gt_hat[pos_pred_mask]
+    pos_cls = pred_cls[pos_pred_mask]
+    pos_mask = pred_onehot[pos_pred_mask]
+
+    pos_preds_loc.append(pos_loc)
+    pos_preds_cls.append(pos_cls)
+    pos_preds_onehot.append(pos_mask)
 
 # Non Maximum Suppression per image
 nms_bboxes = []
-for onehot_, loc_, cls_ in zip(onehot_per_img, loc_per_img, cls_per_img):
+for onehot_, loc_, cls_ in zip(pos_preds_onehot, pos_preds_loc, pos_preds_cls):
     final_bboxes, _ = non_maximum_suppression(loc_, onehot_, 0.5)
     final_bboxes = xywh2xyxy(np.array(final_bboxes))
     nms_bboxes.append(final_bboxes)
 
-# visualization
-rected_images = images_with_rectangles(train_xs * 255, nms_bboxes)
+# 이미지 한장당 positive localization, classification 정보를 가져옵니다.
+pos_trues_loc = []
+pos_trues_cls = []
+for pos_pred_mask, gt, true_cls in zip(pos_trues_mask, gts, trues_cls):
+    pos_loc = gt[pos_pred_mask]
+    pos_cls = true_cls[pos_pred_mask]
+    pos_loc = xywh2xyxy(pos_loc)
+    pos_trues_loc.append(pos_loc)
+    pos_trues_cls.append(pos_cls)
+
+# visualization prediction
+rected_images = images_with_rectangles(train_xs * 255, pos_trues_loc, color=(0, 255, 0))
+plot_images(rected_images)
+rected_images = images_with_rectangles(train_xs * 255, nms_bboxes, color=(255, 255, 0))
 plot_images(rected_images)
