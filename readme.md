@@ -17,6 +17,7 @@
 ## Table of Contents
  - Requirements
  - Project Architecture
+ - Network Architecture
  - Datasets
  - Training
  - Detail implements  
@@ -26,6 +27,8 @@
 ## Requirements 
 
 ## Project Architecture
+
+## Network Architecture 
  
 ## Datasets 
 
