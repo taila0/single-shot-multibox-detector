@@ -26,6 +26,12 @@
 
 ## Requirements 
 
+### main package version 
+- tensorflow==2.5.0 
+- opencv-python==4.5.1.48
+- numpy==1.19.5
+- matplotlib==3.4.2
+
 <details>
   <summary> Requirements </summary>
   absl-py==0.11.0
