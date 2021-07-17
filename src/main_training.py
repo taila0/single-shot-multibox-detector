@@ -6,7 +6,7 @@ from loss import detection_loss, ssd_loss
 
 # load dataset
 train_xs = np.load('../datasets/debug_true_images.npy')
-train_ys = np.load('../datasets/debug_true_images.npy')
+train_ys = np.load('../datasets/debug_true_labels.npy')
 
 input_shape = train_xs.shape[1:]
 n_classes = 11
