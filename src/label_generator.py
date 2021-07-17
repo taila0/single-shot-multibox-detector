@@ -61,8 +61,8 @@ def label_generator(default_bboxes, gt_bboxes, gt_classes, n_classes):
 
 if __name__ == '__main__':
     # Generate default bboxes
-    fmap = tf.constant(shape=(2, 8, 8, 2), value=1)
-    h, w = fmap.get_shape()[1:3]
+
+    h, w = 8, 8
     n_classes = 11
     n_layer = 11
     paddings = ['SAME'] * n_layer

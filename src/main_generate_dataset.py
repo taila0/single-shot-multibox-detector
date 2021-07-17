@@ -16,9 +16,8 @@ n_classes = 10 + 1
 
 # Generate detection SSD model
 n_boxes = 5
+
 # 각 header 는 하나의 scale 을 사용함, ratio 는 공유
-
-
 fmaps = [(32, 32), (16, 16), (8, 8)]
 n_head = len(fmaps)
 scales = [10, 25, 40]
@@ -104,7 +103,6 @@ np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))
 np.save('../datasets/debug_true_labels.npy', np.array(trues[:100]))
 np.save('../datasets/debug_true_images.npy', np.array(true_imgs[:100]))
-
 
 consume_time = time() - s_time
 print('consume_time : {}'.format(consume_time))
