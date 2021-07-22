@@ -26,15 +26,15 @@ preds = model.predict(x=train_xs)
 preds_onehot = preds[..., 4:]  # shape=(N_img, N_anchor, n_classes)
 preds_delta = preds[..., :4]  # shape=(N_img, N_anchor, 4)
 
-# recorver ground truths
+# change relative coords to absolute coords for groundruths
 gts_hat = calculate_gt(default_boxes, preds_delta)  # shape=(N_img, N_anchor, 4)
 gts = calculate_gt(default_boxes, trues_delta)  # shape=(N_img, N_anchor, 4)
 
-# get positive bool mask for prediction, shape (N_img, N_default_boxes)
+# get foreground(not background) bool mask for prediction, shape (N_img, N_default_boxes)
 preds_cls = np.argmax(preds_onehot, axis=-1)  # shape (N_img, N_default_boxes)
 pos_preds_mask = (preds_cls != 10)  # shape (N_img, N_default_boxes)
 
-# get positive bool mask for true, shape (N_img, N_default_boxes)
+# get foreground bool mask for true, shape (N_img, N_default_boxes)
 pos_trues_mask = (trues_cls != 10)  # shape (N_img, N_default_boxes)
 
 # 이미지 한장당 positive localization, classification 정보를 가져옵니다.
