@@ -4,8 +4,8 @@ from utils import xywh2xyxy
 
 def calculate_iou(pr_boxes, gt_boxes):
     """
-    sample_bboxes : Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx cy w, h))
-    sample_bboxes : Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx cy w, h)),
+    pr_boxes : Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx cy w, h))
+    gt_boxes : Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx cy w, h)),
     """
     pr_boxes = xywh2xyxy(pr_boxes)
     gt_boxes = xywh2xyxy(gt_boxes)
