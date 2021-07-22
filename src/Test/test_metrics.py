@@ -2,6 +2,7 @@ from unittest import TestCase
 from tensorflow.keras.models import load_model
 import numpy as np
 from delta import calculate_gt
+from loss import ssd_loss
 from utils import xywh2xyxy
 import pickle
 
