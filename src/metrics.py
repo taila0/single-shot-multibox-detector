@@ -5,19 +5,46 @@ from utils import draw_rectangles, plot_images
 from sklearn.metrics import recall_score, precision_score
 
 
-def matching(pred, true):
+def matching(preds_loc, preds_cls, trues_loc, trues_cls, threshold):
     """
     Description:
-    각 prediction 에 ground truth 값을 1:1 매칭 합니다.
-    만약 prediction에 해당 하는 ground truth 가 없을 때에는 FP 가 됩니다 .
+    각 예측한 bounding box(ĝ)와  ground truth(g) 값을 1:1 매칭해 반환합니다.
+    단 배경 클래스는 onehot vector 에서 가장 마지막 index 에 놓여 있어야 합니다.
+    예를들어 0~9까지 존재하는 mnist 의 경우 배경 클래스는 10이 여야 합니다.
 
-    :param pred: Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx cy w, h))
-    :param true: Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx cy w, h))
+    :param pred: Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx, cy, w, h) + n_classes)
+    :param true: Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx, cy, w, h) + n_classes)
 
     :return:
     """
+    # 각 이미지 별 ground truth 와 nms 가 적용된 prediction 간의 iou 을 계산
+    ious = []
+    for pred_loc, true_loc in zip(preds_loc, trues_loc):
+        ious.append(calculate_iou(pred_loc, true_loc))
 
-    ious = calculate_iou(pred, true)
+
+
+
+
+
+
+
+
+    return ious
+
+    # # iou 중 가장 overlay 비율이 큰 Index 선택합니다.
+    # # shape = (N_default_boxes, )
+    # iou_max_index = np.argmax(ious, axis=-1)
+    #
+    # # 모든 obj 에 대해 iou 가 0.5 이하이면 background class, -1로 지정합니다.
+    # background_mask = np.all(ious < 0.5, axis=-1)
+    # iou_max_index[background_mask] = -1
+    #
+    # # 기존의 class 에 배경 class 을 추가합니다.
+    # gt_classes = np.concatenate([pred, np.array([n_classes - 1])])
+    #
+    # # ground truths 의 index을 class 로 변경합니다.
+    # true_cls = gt_classes[iou_max_index]
 
 
 def mAP(pred, true):
@@ -56,10 +83,6 @@ def mAP(pred, true):
     # 각 class 별 AP 계산
     n_classes = np.shape(true_onehot)[-1]
     average_precisions = {}
-
-
-
-
 
     return np.mean(average_precisions)
 
