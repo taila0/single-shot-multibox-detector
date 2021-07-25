@@ -4,6 +4,16 @@ from utils import xywh2xyxy
 
 def calculate_iou(pr_boxes, gt_boxes):
     """
+    Description:
+    주어진 anchor(default boxes, prior boxes) 와 ground truth 간의 iou 을 구해 반환합니다.
+
+    |           | gt 1   | gt 2   |
+    |-----------|--------|--------|
+    | anchor 1  | 0.8972 | 0.625  |
+    | anchor 2  | 0.9761 | 0.7261 |
+    | anchor 3  | 0.1726 | 0.789  |
+
+
     pr_boxes : Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx cy w, h))
     gt_boxes : Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx cy w, h)),
     """
