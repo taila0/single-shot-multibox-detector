@@ -9,15 +9,11 @@ import pickle
 
 # Load dataset
 trainset = DetectionDataset(data_type='train')
-gt_img, gt_info = trainset[0]
-gt_coords = gt_info.iloc[:, 1:5].values
-gt_labels = gt_info.iloc[:, -1].values
 n_classes = 10 + 1
 
 # Generate detection SSD model
-n_boxes = 5
-
 # 각 header 는 하나의 scale 을 사용함, ratio 는 공유
+n_boxes = 5
 fmaps = [(32, 32), (16, 16), (8, 8)]
 n_head = len(fmaps)
 scales = [10, 25, 40]
@@ -65,18 +61,21 @@ os.makedirs('../datasets', exist_ok=True)
 f = open('../datasets/default_boxes_bucket.pkl', 'wb')
 pickle.dump(default_boxes_bucket, f)
 
-# 모든 이미지 당 header 별 delta, cls 정답값을 수집합니다.
+# 모든 ground truth 정보를 delta, cls 변환해 저장합니다.
 trues = []
 true_imgs = []
 s_time = time()
+gt_coords_bucket = []
+gt_labels_bucket = []
 for gt_img, gt_info in tqdm(trainset):
 
-    # shape (N_img, 4=(cx cy w h))
+    # shape (N_obj, 4=(cx cy w h))
     gt_coords = gt_info.iloc[:, 1:5].values
-    gt_labels = gt_info.iloc[:, -1].values
+    gt_coords_bucket.append(gt_coords)
 
-    # ground truth coordinates(xcx cy w h), shape = (N_obj, 4)
-    gt_coords = gt_coords.reshape(-1, 4)
+    # shape (N_obj)
+    gt_labels = gt_info.iloc[:, -1].values
+    gt_labels_bucket.append(gt_labels)
 
     # 각 header 별 delta, cls 을 구합니다.
     each_header_loc = []
@@ -99,10 +98,22 @@ for gt_img, gt_info in tqdm(trainset):
     trues.append(true)
     true_imgs.append(gt_img)
 
+# save data
 np.save('../datasets/true_labels.npy', np.array(trues))
 np.save('../datasets/true_images.npy', np.array(true_imgs))
+with open('../datasets/gt_coords_bucket.pkl', 'wb') as f:
+    pickle.dump(gt_coords_bucket, f)
+with open('../datasets/gt_labels_bucket.pkl', 'wb') as f:
+    pickle.dump(gt_labels_bucket, f)
+
+# save data for debug
 np.save('../datasets/debug_true_labels.npy', np.array(trues[:100]))
 np.save('../datasets/debug_true_images.npy', np.array(true_imgs[:100]))
+with open('../datasets/debug_gt_coords_bucket.pkl', 'wb') as f:
+    pickle.dump(gt_coords_bucket[:100], f)
+with open('../datasets/debug_gt_labels_bucket.pkl', 'wb') as f:
+    pickle.dump(gt_labels_bucket[:100], f)
+
 
 consume_time = time() - s_time
 print('consume_time : {}'.format(consume_time))
