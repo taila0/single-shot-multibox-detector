@@ -26,8 +26,10 @@ preds = model.predict(x=train_xs)
 preds_onehot = preds[..., 4:]  # shape=(N_img, N_anchor, n_classes)
 preds_delta = preds[..., :4]  # shape=(N_img, N_anchor, 4)
 
-# change relative coords to absolute coords for groundruths
+# change relative coords to absolute coords for predictions
 gts_hat = calculate_gt(default_boxes, preds_delta)  # shape=(N_img, N_anchor, 4)
+
+# change relative coords to absolute coords for groundruths
 gts = calculate_gt(default_boxes, trues_delta)  # shape=(N_img, N_anchor, 4)
 
 # get foreground(not background) bool mask for prediction, shape (N_img, N_default_boxes)
@@ -53,7 +55,7 @@ for pos_pred_mask, gt_hat, pred_cls, pred_onehot in zip(pos_preds_mask, gts_hat,
 # Non Maximum Suppression per image
 nms_bboxes = []
 for onehot_, loc_, cls_ in zip(pos_preds_onehot, pos_preds_loc, pos_preds_cls):
-    final_bboxes, _ = non_maximum_suppression(loc_, onehot_, 0.5)
+    final_bboxes, _, _ = non_maximum_suppression(loc_, onehot_, 0.5)
     final_bboxes = xywh2xyxy(np.array(final_bboxes))
     nms_bboxes.append(final_bboxes)
 

@@ -35,7 +35,11 @@ def label_generator(default_bboxes, gt_bboxes, gt_classes, n_classes):
     # 모든 obj 에 대해 iou 가 0.5 이하이면 background class, -1로 지정합니다.
     background_mask = np.all(ious < 0.5, axis=-1)
     iou_max_index[background_mask] = -1
+
+    # 기존의 class 에 배경 class 을 추가합니다.
     gt_classes = np.concatenate([gt_classes, np.array([n_classes - 1])])
+
+    # ground truths 의 index을 class 로 변경합니다.
     true_cls = gt_classes[iou_max_index]
 
     # 기존의 정답 데이터에 [0, 0, 0, 0] 을 추가합니다.
