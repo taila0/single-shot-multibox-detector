@@ -3,7 +3,7 @@ from tensorflow.keras.models import load_model
 import numpy as np
 from delta import calculate_gt
 from loss import ssd_loss
-from metrics import matching
+from metrics import match_gt, mAP
 from nms import non_maximum_suppression
 from utils import xywh2xyxy
 import pickle
@@ -51,6 +51,7 @@ class TestMetrics(TestCase):
 
         # 이미지 한장당 positive localization, classification 정보를 가져옵니다.
         pos_preds_loc = []
+
         pos_preds_cls = []
         pos_preds_onehot = []
         for pos_pred_mask, gt_hat, pred_cls, pred_onehot in zip(self.pos_preds_mask,
@@ -68,13 +69,26 @@ class TestMetrics(TestCase):
         # Non Maximum Suppression per image
         self.nms_bboxes = []
         self.nms_labels = []
+        self.nms_onehots = []
 
         for onehot_, loc_, cls_ in zip(pos_preds_onehot, pos_preds_loc, pos_preds_cls):
-            final_bboxes, _, final_labels = non_maximum_suppression(loc_, onehot_, 0.5)
+            final_bboxes, final_onehots, final_labels = non_maximum_suppression(loc_, onehot_, 0.5)
             final_bboxes = np.array(final_bboxes)
             self.nms_bboxes.append(final_bboxes)
             self.nms_labels.append(final_labels)
+            self.nms_onehots.append(final_onehots)
 
     def test_mathcing(self):
-        matching(self.nms_bboxes, self.gt_coords_bucket)
-        pass
+        # anchor box 별 할당된 ground truth class 입니다.
+        self.anchor_cls = np.concatenate(match_gt(self.nms_bboxes, self.gt_coords_bucket, self.gt_labels_bucket),
+                                         axis=-1)
+
+    def test_mAP(self):
+        self.anchor_cls = np.concatenate(match_gt(self.nms_bboxes, self.gt_coords_bucket, self.gt_labels_bucket),
+                                         axis=-1)
+        self.anchor_cls_hat = np.concatenate(self.nms_labels, axis=-1)
+        self.anchor_onehots = np.concatenate(self.nms_onehots, axis=0)
+
+        mean_ap = mAP(self.anchor_onehots, self.anchor_cls)
+        print(mean_ap)
+

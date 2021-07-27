@@ -1,53 +1,41 @@
 import numpy as np
-import cv2
 from iou import calculate_iou
 from utils import draw_rectangles, plot_images
-from sklearn.metrics import recall_score, precision_score
+from sklearn.metrics import precision_recall_curve, average_precision_score
+import matplotlib.pyplot as plt
 
 
-def matching(preds_loc, preds_cls, trues_loc, trues_cls, threshold):
+def match_gt(preds_loc, trues_loc, trues_cls, threshold=0.5, background_class=10):
     """
     Description:
-    각 예측한 bounding box(ĝ)와  ground truth(g) 값을 1:1 매칭해 반환합니다.
-    단 배경 클래스는 onehot vector 에서 가장 마지막 index 에 놓여 있어야 합니다.
-    예를들어 0~9까지 존재하는 mnist 의 경우 배경 클래스는 10이 여야 합니다.
+    각 예측한 bounding box(ĝ)에 알맞는 ground truth 을 할당합니다.
+    예측한 bounding box 와 ground truth 간 IOU 을 계산해 IOU 가 가장 높은 ground turth 을 정답으로 매칭 합니다.
 
-    :param pred: Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx, cy, w, h) + n_classes)
-    :param true: Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx, cy, w, h) + n_classes)
+    :param preds_loc: Ndarray, 2D array, shape: (N_pr_boxes, 4=(cx, cy, w, h) + n_classes)
+    :param trues_loc: Ndarray, 2D array ,shape: (N_gt_boxes, 4=(cx, cy, w, h) + n_classes)
 
     :return:
     """
     # 각 이미지 별 ground truth 와 nms 가 적용된 prediction 간의 iou 을 계산
-    ious = []
-    for pred_loc, true_loc in zip(preds_loc, trues_loc):
-        ious.append(calculate_iou(pred_loc, true_loc))
+    gt_labels_bucket = []
+    for pred_loc, true_loc, true_cls in zip(preds_loc, trues_loc, trues_cls):
+        ious = calculate_iou(pred_loc, true_loc)
+
+        # ious 중 가장 iou matching 이 많이된 class 을 할당합니다.
+        gt_indices = np.argmax(ious, axis=-1)
+        gt_labels = true_cls[gt_indices]
+
+        # iou 중 threshold 보다 높은 ground truth 가 없으면 배경 클래스로 지정합니다.
+        bg_mask = np.all(ious < threshold, axis=-1)
+        gt_labels[bg_mask] = background_class
+
+        # 이미지 별 계산된 anchor 별 ground turth class을 리스트에 추가합니다.
+        gt_labels_bucket.append(gt_labels)
+
+    return gt_labels_bucket
 
 
-
-
-
-
-
-
-
-    return ious
-
-    # # iou 중 가장 overlay 비율이 큰 Index 선택합니다.
-    # # shape = (N_default_boxes, )
-    # iou_max_index = np.argmax(ious, axis=-1)
-    #
-    # # 모든 obj 에 대해 iou 가 0.5 이하이면 background class, -1로 지정합니다.
-    # background_mask = np.all(ious < 0.5, axis=-1)
-    # iou_max_index[background_mask] = -1
-    #
-    # # 기존의 class 에 배경 class 을 추가합니다.
-    # gt_classes = np.concatenate([pred, np.array([n_classes - 1])])
-    #
-    # # ground truths 의 index을 class 로 변경합니다.
-    # true_cls = gt_classes[iou_max_index]
-
-
-def mAP(pred, true):
+def mAP(onehots, trues, visualization=True):
     """
     Description:
         Mean Average Precision 을 구합니다.
@@ -68,23 +56,27 @@ def mAP(pred, true):
         mAP(mean Average Precision)은 모든 class 의 AP에 대한 평균 값을 의미합니다.
 
     Args:
-        :param pred: ndarray, shape=(N_sample, 4+N_classes=(cx cy w h 0 ... N_classes-1))
-        :param true:  ndarray,  shape=(N_sample, 4+N_classes=(cx cy w h 0 ... N_classes-1))
+        :param onehots: ndarray, shape=(N_sample, N_classes=(cx cy w h 0 ... N_classes-1))
+        :param trues:  ndarray,  shape=(N_sample, N_classes=(cx cy w h 0 ... N_classes-1))
+        :param visualization:  bool,
 
     :return: float
     """
+    n_classes = onehots.shape[-1]
+    # 배경 클래스를 제외한 모든 클래스의 precision-recall graph 을 그립니다.
+    aps = []
+    for class_index in range(n_classes-1):
+        pos_trues = (trues == class_index)
+        pos_probs = onehots[:, class_index]
+        ap = average_precision_score(y_true=pos_trues, y_score=pos_probs)
+        aps.append(ap)
 
-    pred_reg = pred[..., :4]
-    pred_onehot = pred[..., 4:]
+        precision, recall, thresholds = precision_recall_curve(y_true=pos_trues, probas_pred=pos_probs)
+        plt.plot(recall, precision)
 
-    true_reg = true[..., :4]
-    true_onehot = true[..., 4:]
-
-    # 각 class 별 AP 계산
-    n_classes = np.shape(true_onehot)[-1]
-    average_precisions = {}
-
-    return np.mean(average_precisions)
+    if visualization:
+        plt.show()
+    return np.mean(aps)
 
 
 if __name__ == '__main__':
