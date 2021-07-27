@@ -1,53 +1,8 @@
-from utils import xywh2xyxy
+from iou import calculate_iou
 import numpy as np
 
 
-def calculate_iou(pr_boxes, gt_boxes):
-    """
-    proior boxes (default boxes)와 ground truth boxes와의 iou 을 계산해 반환합니다.
-    :param pr_boxes:  Ndarray, 2D array [cx, cy, w1, h1, cx, cx, w, h, ... ],
-                    shape: (N_pr_boxes, 4=(cx cy w, h))
-    :param gt_boxes: Ndarray, 2D array [cx, cy, w, h, cx, cy, w, h, ... ],
-                    shape: (N_gt_boxes, 4=(cx cy w, h)),
-    :return: iou: Ndarray, 2D array [cx, cy, w, h, cx, cy, w, h, ... ],
-                    shape: (N_gt_boxes, 4=(cx cy w, h)),
-    """
-
-    # cxcywh -> xyxy
-    pr_boxes = xywh2xyxy(pr_boxes)
-
-    # cxcywh -> xyxy
-    gt_boxes = xywh2xyxy(gt_boxes)
-
-    # Get Area
-    area_pr = (pr_boxes[:, 2] - pr_boxes[:, 0]) * (pr_boxes[:, 3] - pr_boxes[:, 1])
-    area_gt = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])
-
-    # expand dims for using broadcasting
-    # (N_achr, 4) -> (N_achr, 1, 4)
-    expand_pr = np.expand_dims(pr_boxes, axis=1)
-
-    # (N_gt, 4) -> (1, N_gt, 4)
-    expand_gt = np.expand_dims(gt_boxes, axis=0)
-
-    # search Maximum
-    x1y1 = np.where(expand_pr[:, :, :2] > expand_gt[:, :, :2], expand_pr[:, :, :2], expand_gt[:, :, :2])
-
-    # search Minimum
-    x2y2 = np.where(expand_pr[:, :, 2:] < expand_gt[:, :, 2:], expand_pr[:, :, 2:], expand_gt[:, :, 2:])
-
-    # get overlay area
-    overlay_area = np.where(np.prod(np.maximum(x2y2 - x1y1, 0), axis=-1) > 0,
-                            np.prod(np.maximum(x2y2 - x1y1, 0), axis=-1), 0)
-
-    # expand dimension for broadcasting
-    expand_area_pr = np.expand_dims(area_pr, axis=-1)
-
-    iou = overlay_area / (expand_area_pr + area_gt - overlay_area)
-    return iou
-
-
-def non_maximum_suppression(bboxes, preds, threshold):
+def non_maximum_suppression(bboxes, onehots, threshold):
     """
 
     Description:
@@ -65,53 +20,51 @@ def non_maximum_suppression(bboxes, preds, threshold):
             6. 각각의 클래스에 대해 위 과정을 반복합니다.
 
     :param bboxes: list, shape=(N, 4=(cx, cy, w, h)) bounding boxes 값이 들어 있어야 함.
-    :param preds: ndarray, shape=(N, n_classes), 단일 클래스에 대한 prediction 값이 들어 있어야 함.
+    :param onehots: ndarray, shape=(N, n_classes), 단일 클래스에 대한 prediction 값이 들어 있어야 함.
     :param threshold: float, 동일 박스라고 판단하는 기준점. 0과 1 사의의 값을 가짐.
 
     :return:
         final_bboxes : list, 겹쳐진 박스가 모두 제거된 최종 박스
-        final_preds : list, 겹쳐진 박스가 모두 제거된 최종 박스의 확률값
+        final_onehots : list, 겹쳐진 박스가 모두 제거된 최종 박스의 확률값
         final_labels : list, 겹쳐진 박스가 모두 제거된 최종 박스의 class
     """
 
     # class 중 확률값이 가장 큰 class 을 선택합니다.
     # shape (N, 4) -> (N, )
-    labels = np.argmax(preds, axis=-1)
-    preds = np.max(preds, axis=-1)
-
+    labels = np.argmax(onehots, axis=-1)
+    probs = np.max(onehots, axis=-1)
 
     # prediction 및 bounding boxes을 prediction 값이 높은 순서로 정렬(내림 차순)
-    sorted_index = np.argsort(preds)[::-1]
+    sorted_index = np.argsort(probs)[::-1]
     bboxes = bboxes[sorted_index]
-    preds = preds[sorted_index]
     labels = labels[sorted_index]
 
     final_bboxes = []
-    final_preds = []
     final_labels = []
+    final_onehots = []
 
     # bounding boxes에 아무것도 없을때까지 수행
     while bboxes.tolist():
         # prediction 값이 가장 높은 bounding box 후보군을 선택하고 final bboxes 집어 넣음.
         trgt_bbox = bboxes[0]
         final_bboxes.append(trgt_bbox)
-        trgt_pred = preds[0]
-        final_preds.append(trgt_pred)
         trgt_labels = labels[0]
         final_labels.append(trgt_labels)
+        trgt_onehots = onehots[0]
+        final_onehots.append(trgt_onehots)
 
         # 후보 bounding box을 bboxes 에서 제거함
         bboxes = np.delete(bboxes, 0, axis=0)
-        preds = np.delete(preds, 0, axis=0)
         labels = np.delete(labels, 0, axis=0)
+        onehots = np.delete(onehots, 0, axis=0)
 
         # 후보 bbox 와 bboxes 와의 iou 을 계산함.
         ious = calculate_iou(trgt_bbox[None], bboxes)
 
-        # 후보 bbox 와 bboxes 와의 iou 을 계산해 특정 threshold이상 겹치는 bbox 는 bboxes 에서 제거
+        # 후보 bbox 와 bboxes 와의 iou 을 계산해 특정 threshold 이상 겹치는 bbox 는 bboxes 후보에서 제거
         overlay_index = np.where(np.squeeze(ious > threshold))
         bboxes = np.delete(bboxes, overlay_index, axis=0)
-        preds = np.delete(preds, overlay_index, axis=0)
+        onehots = np.delete(onehots, overlay_index, axis=0)
         labels = np.delete(labels, overlay_index, axis=0)
 
-    return final_bboxes, final_preds, final_labels
+    return final_bboxes, final_onehots, final_labels
